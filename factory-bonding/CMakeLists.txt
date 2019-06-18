@@ -10,6 +10,7 @@ include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(factory-bonding)
 zephyr_include_directories(
   $ENV{ZEPHYR_BASE}/subsys/bluetooth/host
+  ${CMAKE_SOURCE_DIR}/../include
 )
 include_directories(/usr/include/)
 

@@ -152,12 +152,13 @@ void serialize_keys(struct bt_keys *keys, uint8_t *spacekey,
     fprintf(fp, "\n");
 }
 
-FILE *open_guestlist(void) {
-    FILE *fp = fopen("coins.txt", "r+");
-    if (flock(fileno(fp), LOCK_EX | LOCK_NB) == 0) {
+FILE *open_guestlist(const char* mode) {
+    FILE *fp = fopen("coins.txt", mode);
+    if (fp && flock(fileno(fp), LOCK_EX | LOCK_NB) == 0) {
         return fp;
     }
     fprintf(stderr, "Failed to open guest list\n");
+    exit(-1);
     return NULL;
 }
 #endif

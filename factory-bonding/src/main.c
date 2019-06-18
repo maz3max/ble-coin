@@ -15,10 +15,12 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/crypto.h>
-#include <keys.h>
+
 #include <bsd/stdlib.h>
-#include <stdio.h>
-#include <regex.h>
+
+#include "unistd.h"
+
+#include "guestlist.h"
 
 #define CHECK_ERR if (err) { printk("ERROR %i\n", err); return; }
 
@@ -31,157 +33,22 @@ bt_addr_le_t get_random_address() {
     return a;
 }
 
-bool deserialize_id(FILE *fp, bt_addr_le_t *id,
-                    struct bt_irk *id_irk) {
-    bool result = true;
-
-    regex_t rx_id, rx_irk;
-    regcomp(&rx_id, "ID: (([[:xdigit:]]{2}\\:){5}[[:xdigit:]]{2}) (random|public)", REG_EXTENDED);
-    regcomp(&rx_irk, "IRK: ([[:xdigit:]]{32})", REG_EXTENDED);
-
-    regmatch_t matches[8];
-    char *line = NULL;
-    size_t len = 0;
-    if (getline(&line, &len, fp) > 0 && regexec(&rx_id, line, 8, matches, 0) == 0 && matches[0].rm_so != -1) {
-        if (!strncmp("random", line + matches[3].rm_so, 6)) {
-            id->type = BT_ADDR_LE_RANDOM;
-        } else if (!strncmp("public\n", line + matches[3].rm_so, 6)) {
-            id->type = BT_ADDR_LE_PUBLIC;
-        }
-        for (int i = 0; i < 6; ++i) {
-            char buf[3] = {line[matches[1].rm_so + (i * 3)], line[matches[1].rm_so + (i * 3) + 1], 0};
-            id->a.val[5 - i] = strtol(buf, NULL, 16);
-        }
-    } else {
-        result = false;
+bool check_if_addr_exists(bt_addr_le_t *addr) {
+    struct bt_irk irk;
+    bt_addr_le_t id;
+    if(access("coins.txt", F_OK) == -1){
+        return false;
     }
-    if (getline(&line, &len, fp) > 0 && regexec(&rx_irk, line, 8, matches, 0) == 0 && matches[0].rm_so != -1) {
-        for (int i = 0; i < 16; ++i) {
-            char buf[3] = {line[matches[1].rm_so + (i * 2)], line[matches[1].rm_so + (i * 2) + 1], 0};
-            id_irk->val[i] = strtol(buf, NULL, 16);
-        }
-    } else {
-        result = false;
-    }
-    regfree(&rx_id);
-    regfree(&rx_irk);
-    return result;
-}
-
-bool deserialize_keys(FILE *fp, struct bt_keys *keys, uint8_t *spacekey) {
-    regex_t rx_ltk, rx_l_csrk, rx_r_csrk, rx_spacekey;
-    regex_t *regexes[] = {&rx_ltk, &rx_l_csrk, &rx_r_csrk, &rx_spacekey};
-    const char *regex_str[] = {
-            "LTK: ([[:xdigit:]]{32})",
-            "LOCAL_CSRK: ([[:xdigit:]]{32}) CNT: (\\d+)",
-            "REMOTE_CSRK: ([[:xdigit:]]{32}) CNT: (\\d+)",
-            "SPACE_KEY: ([[:xdigit:]]{64})"};
-    for (size_t i = 0; i < 4; ++i) {
-        if (regcomp(regexes[i], regex_str[i], REG_EXTENDED)) {
-            fprintf(stderr, "Error compiling regex %i\n", i);
+    FILE *fp = open_guestlist("r");
+    bool matched = false;
+    while (deserialize_id(fp, &id, &irk)) {
+        if (bt_addr_le_cmp(addr, &id) == 0) {
+            matched = true;
+            break;
         }
     }
-
-    bool result = false;
-
-    regmatch_t matches[8];
-    char *line = NULL;
-    size_t len = 0;
-    if (getline(&line, &len, fp) > 0 && regexec(&rx_ltk, line, 8, matches, 0) == 0 && matches[0].rm_so != -1) {
-        for (int i = 0; i < 16; ++i) {
-            char buf[3] = {line[matches[1].rm_so + (i * 2)], line[matches[1].rm_so + (i * 2) + 1], 0};
-            keys->ltk.val[i] = strtol(buf, NULL, 16);
-        }
-    } else {
-        result = false;
-    }
-    if (getline(&line, &len, fp) > 0 && regexec(&rx_l_csrk, line, 8, matches, 0) == 0 && matches[0].rm_so != -1) {
-        for (int i = 0; i < 16; ++i) {
-            char buf[3] = {line[matches[1].rm_so + (i * 2)], line[matches[1].rm_so + (i * 2) + 1], 0};
-            keys->local_csrk.val[i] = strtol(buf, NULL, 16);
-        }
-        char buf[12];
-        strcpy(buf, line + matches[2].rm_so);
-        keys->local_csrk.cnt = strtol(buf, NULL, 10);
-    } else {
-        result = false;
-    }
-    if (getline(&line, &len, fp) > 0 && regexec(&rx_r_csrk, line, 8, matches, 0) == 0 && matches[0].rm_so != -1) {
-        for (int i = 0; i < 16; ++i) {
-            char buf[3] = {line[matches[1].rm_so + (i * 2)], line[matches[1].rm_so + (i * 2) + 1], 0};
-            keys->remote_csrk.val[i] = strtol(buf, NULL, 16);
-        }
-        char buf[12];
-        strcpy(buf, line + matches[2].rm_so);
-        keys->remote_csrk.cnt = strtol(buf, NULL, 10);
-    } else {
-        result = false;
-    }
-    if (getline(&line, &len, fp) > 0 && regexec(&rx_spacekey, line, 8, matches, 0) == 0 && matches[0].rm_so != -1) {
-        for (int i = 0; i < 32; ++i) {
-            char buf[3] = {line[matches[1].rm_so + (i * 2)], line[matches[1].rm_so + (i * 2) + 1], 0};
-            spacekey[i] = strtol(buf, NULL, 16);
-        }
-    } else {
-        result = false;
-    }
-    keys->enc_size = BT_ENC_KEY_SIZE_MAX;
-    keys->flags = (BT_KEYS_AUTHENTICATED | BT_KEYS_SC);
-    keys->keys = (BT_KEYS_IRK | BT_KEYS_LOCAL_CSRK | BT_KEYS_REMOTE_CSRK | BT_KEYS_LTK_P256);
-    keys->id = BT_ID_DEFAULT;
-    regfree(&rx_ltk);
-    regfree(&rx_l_csrk);
-    regfree(&rx_r_csrk);
-    regfree(&rx_spacekey);
-    return result;
-}
-
-
-// save identity into file
-void serialize_id(const bt_addr_le_t *id,
-                  const struct bt_irk *id_irk,
-                  FILE *fp) {
-    const char *type = (id->type == BT_ADDR_LE_PUBLIC) ? "public" : "random";
-    fprintf(fp, "ID: %02X:%02X:%02X:%02X:%02X:%02X %s\n",
-            id->a.val[5], id->a.val[4], id->a.val[3],
-            id->a.val[2], id->a.val[1], id->a.val[0], type);
-    fprintf(fp, "IRK: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
-            id_irk->val[0], id_irk->val[1], id_irk->val[2], id_irk->val[3],
-            id_irk->val[4], id_irk->val[5], id_irk->val[6], id_irk->val[7],
-            id_irk->val[8], id_irk->val[9], id_irk->val[10], id_irk->val[11],
-            id_irk->val[12], id_irk->val[13], id_irk->val[14], id_irk->val[15]);
-}
-
-// save keychain needed to connect to peripheral into file
-void serialize_keys(const struct bt_keys *keys, const uint8_t *spacekey,
-                    FILE *fp) {
-    fprintf(fp, "LTK: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
-            keys->ltk.val[0], keys->ltk.val[1], keys->ltk.val[2], keys->ltk.val[3],
-            keys->ltk.val[4], keys->ltk.val[5], keys->ltk.val[6], keys->ltk.val[7],
-            keys->ltk.val[8], keys->ltk.val[9], keys->ltk.val[10], keys->ltk.val[11],
-            keys->ltk.val[12], keys->ltk.val[13], keys->ltk.val[14], keys->ltk.val[15]);
-    fprintf(fp, "LOCAL_CSRK: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X CNT: %u\n",
-            keys->local_csrk.val[0], keys->local_csrk.val[1], keys->local_csrk.val[2], keys->local_csrk.val[3],
-            keys->local_csrk.val[4], keys->local_csrk.val[5], keys->local_csrk.val[6], keys->local_csrk.val[7],
-            keys->local_csrk.val[8], keys->local_csrk.val[9], keys->local_csrk.val[10], keys->local_csrk.val[11],
-            keys->local_csrk.val[12], keys->local_csrk.val[13], keys->local_csrk.val[14], keys->local_csrk.val[15],
-            keys->local_csrk.cnt);
-    fprintf(fp, "REMOTE_CSRK: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X CNT: %u\n",
-            keys->remote_csrk.val[0], keys->remote_csrk.val[1], keys->remote_csrk.val[2], keys->remote_csrk.val[3],
-            keys->remote_csrk.val[4], keys->remote_csrk.val[5], keys->remote_csrk.val[6], keys->remote_csrk.val[7],
-            keys->remote_csrk.val[8], keys->remote_csrk.val[9], keys->remote_csrk.val[10], keys->remote_csrk.val[11],
-            keys->remote_csrk.val[12], keys->remote_csrk.val[13], keys->remote_csrk.val[14], keys->remote_csrk.val[15],
-            keys->remote_csrk.cnt);
-    fprintf(fp,
-            "SPACE_KEY: %02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
-            spacekey[0], spacekey[1], spacekey[2], spacekey[3],
-            spacekey[4], spacekey[5], spacekey[6], spacekey[7],
-            spacekey[8], spacekey[9], spacekey[10], spacekey[11],
-            spacekey[12], spacekey[13], spacekey[14], spacekey[15],
-            spacekey[16], spacekey[17], spacekey[18], spacekey[19],
-            spacekey[20], spacekey[21], spacekey[22], spacekey[23],
-            spacekey[24], spacekey[25], spacekey[26], spacekey[27],
-            spacekey[28], spacekey[29], spacekey[30], spacekey[31]);
+    fclose(fp);
+    return matched;
 }
 
 void main(int argc, char *argv[]) {
@@ -202,7 +69,10 @@ void main(int argc, char *argv[]) {
 
 
     printk("generating periph address...\n");
-    bt_addr_le_t periph_addr = get_random_address();
+    bt_addr_le_t periph_addr = {0};//get_random_address();
+    while (check_if_addr_exists(&periph_addr)) {
+        periph_addr = get_random_address();
+    }
     printk("generating periph irk...\n");
     struct bt_irk periph_irk = {0};
     arc4random_buf(periph_irk.val, 16);
@@ -252,15 +122,9 @@ void main(int argc, char *argv[]) {
     settings_commit();
     settings_save();
     printk("Done.\n");
-    FILE *out = fopen("periph_conn.txt", "a+");
-    serialize_id(&periph_addr, &periph_irk, out);
+
+    FILE *out = open_guestlist("a+");
     serialize_keys(&central_keys, spacekey, out);
     fclose(out);
-    /*
-    out = fopen("central_conn.txt", "w");
-    serialize_id(&central_addr, &central_irk, out);
-    serialize_keys(&periph_keys, spacekey, out);
-    fclose(out);
-     */
     exit(0);
 }
