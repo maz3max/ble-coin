@@ -20,8 +20,6 @@
 
 #include "spaceauth.h"
 
-#include "guestlist.h"
-
 #define BLAKE2S_KEYBYTES    32
 
 bt_addr_le_t get_random_address() {
@@ -31,23 +29,38 @@ bt_addr_le_t get_random_address() {
     return a;
 }
 
-// NATIVE_TASK(settings_save, ON_EXIT, 0);
+static FILE *gl = NULL;
 
-void main(int argc, char *argv[]) {
-    bt_addr_le_t addr = {0};
-    struct bt_irk irk = {0};
-    uint8_t key[BLAKE2S_KEYBYTES];
-    struct bt_keys keys = {0};
-
-    FILE *in = open_guestlist();
-    if (!in) {
+void initialize(void) {
+    FILE *c = fopen("central.txt", "r");
+    struct bt_irk id_irk;
+    bt_addr_le_t id;
+    if (c && deserialize_id(c, &id, &id_irk)) {
+        bt_id_create(&id, id_irk.val);
+    } else {
+        fprintf(stderr, "Couldn't load central ID!\n");
         exit(-1);
     }
-    deserialize_id(in, &addr, &irk);
-    serialize_id(&addr, &irk, stdout);
-    rewind(in);
-    deserialize_keys(in, &keys, key);
-    serialize_keys(&keys, key, stdout);
-    fclose(in);
-    exit(0);
+    fclose(c);
+
+    gl = open_guestlist("r");
+    struct bt_keys keys;
+    uint8_t spacekey[BLAKE2S_KEYBYTES];
+    while (gl && deserialize_keys(gl, &keys, spacekey)) {
+        space_add_id(&keys, spacekey);
+    }
+    bt_keys_foreach(BT_KEYS_ALL, space_save_id, stdout);
+}
+
+void finalize(void) {
+    gl = freopen(NULL, "w+", gl);
+    bt_keys_foreach(BT_KEYS_ALL, space_save_id, gl);
+    fclose(gl);
+}
+
+
+NATIVE_TASK(finalize, ON_EXIT, 0);
+
+void main(int argc, char *argv[]) {
+    initialize();
 }

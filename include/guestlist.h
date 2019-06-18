@@ -8,7 +8,7 @@
 #include <sys/file.h>
 
 
-bool deserialize_id(FILE *fp,
+static bool deserialize_id(FILE *fp,
                             bt_addr_le_t *id, struct bt_irk *id_irk) {
     const char *rx_str = "^(([[:xdigit:]]{2}\\:){5}[[:xdigit:]]{2})\\s*"    // addr (1,2)
                          "(random|public)\\s*"                              // type of addr (3)
@@ -39,7 +39,7 @@ bool deserialize_id(FILE *fp,
     return true;
 }
 
-bool deserialize_keys(FILE *fp,
+static bool deserialize_keys(FILE *fp,
                               struct bt_keys *keys, uint8_t *spacekey) {
     const char *rx_str = "^(([[:xdigit:]]{2}\\:){5}[[:xdigit:]]{2})\\s*"    // addr (1,2)
                          "(random|public)\\s*"                              // type of addr (3)
@@ -104,7 +104,7 @@ bool deserialize_keys(FILE *fp,
     return true;
 }
 
-void serialize_id(bt_addr_le_t *id, struct bt_irk *id_irk,
+static void serialize_id(bt_addr_le_t *id, struct bt_irk *id_irk,
                           FILE *fp) {
     // addr and addr type
     const char *type = (id->type == BT_ADDR_LE_PUBLIC) ? "public" : "random";
@@ -118,7 +118,7 @@ void serialize_id(bt_addr_le_t *id, struct bt_irk *id_irk,
     fprintf(fp, "\n");
 }
 
-void serialize_keys(struct bt_keys *keys, uint8_t *spacekey,
+static void serialize_keys(struct bt_keys *keys, uint8_t *spacekey,
                             FILE *fp) {
     // addr and addr type
     const char *type = (keys->addr.type == BT_ADDR_LE_PUBLIC) ? "public" : "random";
@@ -152,7 +152,7 @@ void serialize_keys(struct bt_keys *keys, uint8_t *spacekey,
     fprintf(fp, "\n");
 }
 
-FILE *open_guestlist(const char* mode) {
+static FILE *open_guestlist(const char* mode) {
     FILE *fp = fopen("coins.txt", mode);
     if (fp && flock(fileno(fp), LOCK_EX | LOCK_NB) == 0) {
         return fp;
