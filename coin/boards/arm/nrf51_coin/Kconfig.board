@@ -1,0 +1,9 @@
+# Kconfig - nRF51 Coin board configuration
+#
+# Copyright (c) 2019 Fuck Licenses Corp.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF51_COIN
+	bool "nRF51 COIN"
+	depends on SOC_NRF51822_QFAA

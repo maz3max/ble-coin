@@ -1,0 +1,9 @@
+[submodule "BLAKE2"]
+	path = BLAKE2
+	url = git@github.com:BLAKE2/BLAKE2.git
+[submodule "zephyr"]
+	path = zephyr
+	url = git@github.com:zephyrproject-rtos/zephyr.git
+[submodule "factory-bonding/zephyr"]
+	path = factory-bonding/zephyr
+	url = git@github.com:maz3max/zephyr.git
