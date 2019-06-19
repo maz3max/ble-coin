@@ -1,6 +1,15 @@
 #ifndef GUESTLIST_H
 #define GUESTLIST_H
 
+#ifndef CONFIG_BT_SIGNING
+#define CONFIG_BT_SIGNING
+#endif
+
+#ifndef CONFIG_BT_SMP_SC_PAIR_ONLY
+#define CONFIG_BT_SMP_SC_PAIR_ONLY
+#endif
+
+
 #include <keys.h>
 #include <bluetooth/hci.h>
 #include <stdio.h>

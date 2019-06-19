@@ -5,12 +5,16 @@
 
 #include "hci_core.h"
 
+#ifndef CONFIG_BT_MAX_PAIRED
+#define CONFIG_BT_MAX_PAIRED 50
+#endif
+
 struct space_data {
     bt_addr_le_t id;
     uint8_t key[BLAKE2S_KEYBYTES];
 };
 
-static struct space_data periphs[BT_GATT_CCC_MAX];
+static struct space_data periphs[CONFIG_BT_MAX_PAIRED];
 static size_t periph_count = 0;
 
 struct space_data *id_exists(const bt_addr_le_t *addr) {

@@ -1,6 +1,9 @@
 central/build/
 central/.idea/
+central/cmake-build-debug/
 coin/build/
 coin/.idea/
+coin/cmake-build-debug/
 factory-bonding/build/
 factory-bonding/.idea/
+factory-bonding/cmake-build-debug/
