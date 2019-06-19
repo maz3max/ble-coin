@@ -186,11 +186,20 @@ static struct bt_conn_cb conn_callbacks = {
         .disconnected = disconnected,
 };
 
+static struct k_delayed_work shutdown_timer;
+
+static void shutdown(struct k_work *work) {
+    disconnected(NULL, 0);
+}
+
 void main(void) {
     struct device *dev = device_get_binding(LED_PORT);
 
     printk("Hello World!\n");
 
+    //set shutdown timer
+    k_delayed_work_init(&shutdown_timer, shutdown);
+    k_delayed_work_submit(&shutdown_timer, K_SECONDS(30));
 
     /* Set LED pin as output */
     gpio_pin_configure(dev, LED, GPIO_DIR_OUT);
