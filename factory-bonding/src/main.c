@@ -29,7 +29,9 @@
 bt_addr_le_t get_random_address() {
     bt_addr_le_t a = {.type=BT_ADDR_LE_RANDOM, .a={0}};
     arc4random_buf(a.a.val, 6);
-    BT_ADDR_SET_STATIC(&a.a);
+    BT_ADDR_SET_STATIC(&a.a); //BLE spec: "The two most significant bits of the address shall be equal to 1"
+    //TODO: "At least one bit of the random part of the address shall be 0"
+    //TODO: "At least one bit of the random part of the address shall be 1"
     return a;
 }
 
@@ -69,7 +71,7 @@ void main(int argc, char *argv[]) {
 
 
     printk("generating periph address...\n");
-    bt_addr_le_t periph_addr = {0};//get_random_address();
+    bt_addr_le_t periph_addr = get_random_address();
     while (check_if_addr_exists(&periph_addr)) {
         periph_addr = get_random_address();
     }
