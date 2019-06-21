@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/delete-node/ &storage_partition;
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
 /delete-node/ &scratch_partition;
+/delete-node/ &storage_partition;
 
 &flash0 {
+	reg = <0x00000000 DT_SIZE_K(24)>;
 	/*
 	 * For more information, see:
 	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
@@ -17,9 +21,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@32000 {
+		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0x32000 0x00006000>;
+			reg = <0x000000000 0x00006000>;
 		};
 	};
 };
