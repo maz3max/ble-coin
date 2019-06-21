@@ -54,10 +54,6 @@ static u8_t notify_func(struct bt_conn *conn,
 
 	printk("[NOTIFICATION] data %p length %u\n", data, length);
 
-    if(length == 16){
-        check_sign(&conn->le.resp_addr,)
-    }
-
 	return BT_GATT_ITER_CONTINUE;
 }
 
