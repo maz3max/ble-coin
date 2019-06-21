@@ -8,7 +8,7 @@ set( ENV{ZEPHYR_SDK_INSTALL_DIR} /opt/zephyr-sdk/ )
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 
-project(coin-zephyr)
+project(coin)
 zephyr_include_directories(
   $ENV{ZEPHYR_BASE}/subsys/bluetooth/host
   ../BLAKE2/ref

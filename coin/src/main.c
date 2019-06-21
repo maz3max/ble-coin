@@ -53,9 +53,10 @@ static const struct adc_channel_cfg m_1st_channel_cfg = {
  *
  */
 
-static struct gpio_callback btn_cb;
+static struct gpio_callback btn_cb = {0};
 
 void sys_pm_notify_power_state_entry(enum power_states state) {
+    settings_save();
     if (state == SYS_POWER_STATE_DEEP_SLEEP_1) {
         printk("Entering DEEP SLEEP\n");
         struct device *dev = device_get_binding(LED_PORT);
@@ -134,9 +135,16 @@ void intialise_battery() {
 }
 
 //BLE stuff
-static const struct bt_data ad[] = {
-        BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-};
+
+struct bt_conn *default_conn = NULL;
+
+static void connect_bonded(const struct bt_bond_info *info,
+                           void *user_data) {
+    default_conn = bt_conn_create_slave_le(&info->addr, BT_LE_ADV_CONN);
+    if (!default_conn) {
+        printk("Error advertising\n");
+    }
+}
 
 static void bt_ready(int err) {
     if (err) {
@@ -145,26 +153,22 @@ static void bt_ready(int err) {
     }
     settings_load();
 
-    err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
-    if (err) {
-        printk("Advertising failed to start (err %d)\n", err);
-        return;
-    }
-
-    printk("Advertising successfully started\n");
+    bt_foreach_bond(BT_ID_DEFAULT, connect_bonded, NULL);
 }
 
-struct bt_conn *default_conn;
 
 static void connected(struct bt_conn *conn, u8_t err) {
     if (err) {
         printk("Connection failed (err %u)\n", err);
     } else {
+        if (default_conn) {
+            bt_conn_unref(default_conn);
+        }
         default_conn = bt_conn_ref(conn);
         printk("Connected\n");
         if (bt_conn_security(conn, BT_SECURITY_FIPS)) {
             printk("Kill connection: insufficient security\n");
-            bt_conn_disconnect(conn, 0x0E);
+            bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
         }
     }
 }

@@ -6,7 +6,7 @@
 #include "hci_core.h"
 
 #ifndef CONFIG_BT_MAX_PAIRED
-#define CONFIG_BT_MAX_PAIRED 50
+#define CONFIG_BT_MAX_PAIRED -1
 #endif
 
 struct space_data {
