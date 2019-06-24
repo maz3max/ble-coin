@@ -15,14 +15,16 @@
 #include <bluetooth/uuid.h>
 #include <keys.h>
 
+#include "main.h"
+
 void main(void) {
 
-  bt_addr_le_t central_addr = INSERT_CENTRAL_ADDR_HERE
+  bt_addr_le_t central_addr = INSERT_CENTRAL_ADDR_HERE;
   struct bt_irk central_irk = {
       .val = INSERT_CENTRAL_IRK_HERE,
       .rpa = {0}
   };
-  bt_addr_le_t periph_addr = INSERT_PERIPH_ADDR_HERE
+  bt_addr_le_t periph_addr = INSERT_PERIPH_ADDR_HERE;
   struct bt_irk periph_irk = {
       .val = INSERT_PERIPH_IRK_HERE,
       .rpa = {0}
