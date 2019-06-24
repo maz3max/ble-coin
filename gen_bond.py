@@ -109,9 +109,9 @@ def gen_peripheral(addr_list):
 if __name__ == '__main__':
     # prepare IDs
     p_addr, p_irk = gen_peripheral(read_ids())
-    central_addr, central_addr_type, central_irk = gen_central()
+    c_addr, c_addr_type, c_irk = gen_central()
 
-    print("Central: " + addr_to_str(central_addr, central_addr_type))
+    print("Central: " + addr_to_str(c_addr, c_addr_type))
     print("Peripheral: " + addr_to_str(p_addr))
 
     # prepare keys
@@ -128,6 +128,6 @@ if __name__ == '__main__':
 
     # create defines file
     with open("main.h", "w") as f:
-        f.write(periph_defines(p_addr, p_irk, central_addr,
-                               central_irk, ltk, c_csrk, c_csrk_cnt,
+        f.write(periph_defines(p_addr, p_irk, c_addr,
+                               c_irk, ltk, c_csrk, c_csrk_cnt,
                                p_csrk, p_csrk_cnt, spacekey))
