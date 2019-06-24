@@ -103,6 +103,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
                 memset(auth_key, 0, BLAKE2S_KEYBYTES);
                 return (len < 0) ? len : -EINVAL;
             }
+            printk("LOADED SPACEKEY\n");
             return 0;
         }
     }

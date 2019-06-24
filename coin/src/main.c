@@ -228,8 +228,6 @@ void main(void) {
     bt_conn_cb_register(&conn_callbacks);
     bt_conn_auth_cb_register(NULL);
 
-    settings_commit();
-
     bt_addr_le_t id;
     bt_addr_le_create_static(&id);
     //k_sleep(10000);
