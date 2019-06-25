@@ -127,7 +127,7 @@ if __name__ == '__main__':
                         c_csrk_cnt, p_csrk, p_csrk_cnt, spacekey))
 
     # create defines file
-    with open("main.h", "w") as f:
+    with open("../factory-bonding-onchip/src/main.h", "w") as f:
         f.write(periph_defines(p_addr, p_irk, c_addr,
                                c_irk, ltk, c_csrk, c_csrk_cnt,
                                p_csrk, p_csrk_cnt, spacekey))

@@ -7,3 +7,8 @@ coin/cmake-build-debug/
 factory-bonding/build/
 factory-bonding/.idea/
 factory-bonding/cmake-build-debug/
+factory-bonding-onchip/build/
+factory-bonding-onchip/.idea/
+factory-bonding-onchip/cmake-build-debug/
+prod/
+factory-bonding-onchip/src/main.h
