@@ -201,14 +201,15 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
     if (default_conn) {
         return;
     }
+    bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+    printk("Device found: %s (RSSI %d) (TYPE %u) (BONDED %u)\n", addr_str, rssi, type, bt_addr_le_is_bonded(BT_ID_DEFAULT, addr));
 
     /* We're only interested in directed connectable events from bonded devices*/
-    if (type != BT_LE_ADV_DIRECT_IND || !bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+    if ((type != BT_LE_ADV_DIRECT_IND && type !=BT_LE_ADV_IND)|| !bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
         return;
     }
 
-    bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-    printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+    printk("Connecting to device: %s (RSSI %d)\n", addr_str, rssi);
 
     if (bt_le_scan_stop()) {
         return;
@@ -232,9 +233,9 @@ static void connected(struct bt_conn *conn, u8_t err) {
     }
 
     printk("Connected: %s\n", addr);
-
-    if (bt_conn_security(conn, BT_SECURITY_FIPS)) {
-        printk("Failed to set security\n");
+    int error =bt_conn_security(conn, BT_SECURITY_FIPS);
+    if (error) {
+        printk("Failed to set security: %i\n", error);
         bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
     }
     err = bt_gatt_discover(default_conn, &discover_params);

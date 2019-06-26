@@ -7,3 +7,6 @@
 [submodule "factory-bonding/zephyr"]
 	path = factory-bonding/zephyr
 	url = git@github.com:maz3max/zephyr.git
+[submodule "central/zephyr"]
+	path = central/zephyr
+	url = git@github.com:maz3max/zephyr.git

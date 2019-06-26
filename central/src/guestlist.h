@@ -65,7 +65,7 @@ static bool deserialize_keys(FILE *fp,
     if (getline(&line, &len, fp) > 0 && regexec(&rx, line, 11, matches, 0) == 0 && matches[0].rm_so != -1) {
         keys->enc_size = BT_ENC_KEY_SIZE_MAX;
         keys->flags = (BT_KEYS_AUTHENTICATED | BT_KEYS_SC);
-        keys->keys = (BT_KEYS_IRK | BT_KEYS_LOCAL_CSRK | BT_KEYS_REMOTE_CSRK | BT_KEYS_LTK_P256);
+        keys->keys = (BT_KEYS_IRK | BT_KEYS_LTK_P256);
         keys->id = BT_ID_DEFAULT;
 
         for (int i = 0; i < 6; ++i) {
