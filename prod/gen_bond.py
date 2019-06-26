@@ -23,28 +23,20 @@ def addr_to_c_def(addr, addr_type="random"):
     return "{ .type = %s, .a = %s }" % (t, a_str)
 
 
-def coin_line(periph_addr, periph_irk, ltk, central_csrk, central_csrk_cnt, periph_csrk, periph_csrk_cnt, spacekey):
-    return "%s %s %s %s %u %s %u %s\n" % (
+def coin_line(periph_addr, periph_irk, ltk, spacekey):
+    return "%s %s %s %s\n" % (
         addr_to_str(periph_addr), periph_irk.hex().upper(),  # ID of coin
         ltk.hex().upper(),  # LTK
-        central_csrk.hex().upper(), central_csrk_cnt,  # local CSRK
-        periph_csrk.hex().upper(), periph_csrk_cnt,  # remote CSRK
         spacekey.hex().upper())  # spacekey
 
 
 def periph_defines(periph_addr, periph_irk, central_addr, central_irk, ltk,
-                   central_csrk, central_csrk_cnt,
-                   periph_csrk, periph_csrk_cnt,
                    spacekey):
     string = "#define INSERT_CENTRAL_ADDR_HERE %s\n" % addr_to_c_def(central_addr)
     string += "#define INSERT_CENTRAL_IRK_HERE %s\n" % byte_str_to_c_def(central_irk)
     string += "#define INSERT_PERIPH_ADDR_HERE %s\n" % addr_to_c_def(periph_addr)
     string += "#define INSERT_PERIPH_IRK_HERE %s\n" % byte_str_to_c_def(periph_irk)
     string += "#define INSERT_LTK_HERE %s\n" % byte_str_to_c_def(ltk)
-    string += "#define INSERT_LOCAL_CSRK_HERE %s\n" % byte_str_to_c_def(periph_csrk)
-    string += "#define INSERT_LOCAL_CSRK_CNT_HERE %u\n" % periph_csrk_cnt
-    string += "#define INSERT_REMOTE_CSRK_HERE %s\n" % byte_str_to_c_def(central_csrk)
-    string += "#define INSERT_REMOTE_CSRK_CNT_HERE %u\n" % central_csrk_cnt
     string += "#define INSERT_SPACEKEY_HERE %s\n" % byte_str_to_c_def(spacekey)
     return string
 
@@ -115,19 +107,12 @@ if __name__ == '__main__':
     print("Peripheral: " + addr_to_str(p_addr))
 
     # prepare keys
-    p_csrk = secrets.token_bytes(16)
-    p_csrk_cnt = 0
-    c_csrk = secrets.token_bytes(16)
-    c_csrk_cnt = 0
     ltk = secrets.token_bytes(16)
     spacekey = secrets.token_bytes(32)
 
     # write coin line
-    append_id(coin_line(p_addr, p_irk, ltk, c_csrk,
-                        c_csrk_cnt, p_csrk, p_csrk_cnt, spacekey))
+    append_id(coin_line(p_addr, p_irk, ltk, spacekey))
 
     # create defines file
     with open("../factory-bonding-onchip/src/main.h", "w") as f:
-        f.write(periph_defines(p_addr, p_irk, c_addr,
-                               c_irk, ltk, c_csrk, c_csrk_cnt,
-                               p_csrk, p_csrk_cnt, spacekey))
+        f.write(periph_defines(p_addr, p_irk, c_addr, c_irk, ltk, spacekey))

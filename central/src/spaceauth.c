@@ -31,14 +31,7 @@ struct space_data *id_exists(const bt_addr_le_t *addr) {
 bool space_add_id(struct bt_keys *keys, uint8_t *key) {
     if (!id_exists(&keys->addr)) {
         memcpy(periphs[periph_count].key, key, BLAKE2S_KEYBYTES);
-        bt_addr_le_copy(&periphs[periph_count].id, &keys->addr);
-        struct bt_keys *dest = bt_keys_get_addr(BT_ID_DEFAULT, &keys->addr);
-        if (!dest) {
-            fprintf(stderr, "Unable to save key!\n");
-            return false;
-        }
-        memcpy(dest, keys, sizeof(struct bt_keys)); //copy key into host keystore
-        bt_id_add(dest); //tell controller about key
+        memcpy(&periphs[periph_count].id, &keys->addr, sizeof(struct bt_keys));
         periph_count++;
         return true;
     }

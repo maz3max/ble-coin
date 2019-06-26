@@ -35,15 +35,10 @@ void main(void) {
       .irk = central_irk,
       .enc_size = BT_ENC_KEY_SIZE_MAX,
       .flags = (BT_KEYS_AUTHENTICATED | BT_KEYS_SC),
-      .keys = (BT_KEYS_IRK | BT_KEYS_LOCAL_CSRK | BT_KEYS_REMOTE_CSRK |
-               BT_KEYS_LTK_P256),
+      .keys = (BT_KEYS_IRK | BT_KEYS_LTK_P256),
       .ltk = {.rand = {0},
               .ediv = {0},
               .val = INSERT_LTK_HERE},
-      .local_csrk = {.val = INSERT_LOCAL_CSRK_HERE,
-                     .cnt = INSERT_LOCAL_CSRK_CNT_HERE},
-      .remote_csrk = {.val = INSERT_REMOTE_CSRK_HERE,
-                      .cnt = INSERT_REMOTE_CSRK_CNT_HERE},
   };
   uint8_t spacekey[] = INSERT_SPACEKEY_HERE;
 

@@ -1,5 +1,0 @@
-build/
-cmake-build-debug/
-.idea/
-.vscode/
-src/main.h

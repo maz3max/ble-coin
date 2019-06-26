@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <zephyr.h>
 
 
@@ -17,14 +11,14 @@
 #include <host/conn_internal.h>
 #include "hci_core.h"
 
-#include "kernel.h"
-#include "soc.h"
+#include <settings/settings.h>
+
+#include <kernel.h>
+#include <soc.h>
 
 #include "spaceauth.h"
 
 #define BLAKE2S_KEYBYTES    32
-
-static struct bt_conn *default_conn = NULL;
 
 static uint16_t bas_svc_handle = 0;
 static uint16_t bas_blvl_chr_handle = 0;
@@ -168,11 +162,19 @@ static u8_t discover_func(struct bt_conn *conn,
 static FILE *gl = NULL;
 
 void initialize(void) {
+    settings_subsys_init();
     FILE *c = fopen("central.txt", "r");
     struct bt_irk id_irk;
     bt_addr_le_t id;
     if (c && deserialize_id(c, &id, &id_irk)) {
-        bt_id_create(&id, id_irk.val);
+        /*
+        settings_save_one("bt/id", &id, sizeof(bt_addr_le_t));
+        settings_save_one("bt/irk", &id_irk.val, 16);
+        */
+        int n = bt_id_create(&id, id_irk.val);
+        if(n != 0){
+            fprintf(stderr, "Oh no! The ID could not be set!");
+        }
     } else {
         fprintf(stderr, "Couldn't load central ID!\n");
         exit(-1);
@@ -184,6 +186,7 @@ void initialize(void) {
     uint8_t spacekey[BLAKE2S_KEYBYTES];
     while (gl && deserialize_keys(gl, &keys, spacekey)) {
         space_add_id(&keys, spacekey);
+        bt_keys_store(&keys);
     }
     bt_keys_foreach(BT_KEYS_ALL, space_save_id, stdout);
 }
@@ -198,9 +201,6 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad) {
     char addr_str[BT_ADDR_LE_STR_LEN];
 
-    if (default_conn) {
-        return;
-    }
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
     printk("Device found: %s (RSSI %d) (TYPE %u) (BONDED %u)\n", addr_str, rssi, type, bt_addr_le_is_bonded(BT_ID_DEFAULT, addr));
 
@@ -215,7 +215,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
         return;
     }
 
-    default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+    bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
 }
 
 static void connected(struct bt_conn *conn, u8_t err) {
@@ -225,10 +225,11 @@ static void connected(struct bt_conn *conn, u8_t err) {
 
     if (err) {
         printk("Failed to connect to %s (%u)\n", addr, err);
-        return;
-    }
-
-    if (conn != default_conn) {
+        bt_conn_unref(conn);
+        int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+        if (error) {
+        printk("Scanning failed to start (err %d)\n", error);
+        }
         return;
     }
 
@@ -238,7 +239,8 @@ static void connected(struct bt_conn *conn, u8_t err) {
         printk("Failed to set security: %i\n", error);
         bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
     }
-    err = bt_gatt_discover(default_conn, &discover_params);
+    printk("Starting Discovery...\n");
+    err = bt_gatt_discover(conn, &discover_params);
     if (err) {
         printk("Discover failed(err %d)\n", err);
         return;
@@ -253,12 +255,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason) {
 
     printk("Disconnected: %s (reason %u)\n", addr, reason);
 
-    if (default_conn != conn) {
-        return;
-    }
-
-    bt_conn_unref(default_conn);
-    default_conn = NULL;
+    bt_conn_unref(conn);
 
     err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
     if (err) {
@@ -295,20 +292,18 @@ static struct bt_conn_cb conn_callbacks = {
 
 NATIVE_TASK(finalize, ON_EXIT, 0);
 
-void main(int argc, char *argv[]) {
-    initialize();
+static void bt_ready(int err)
+{
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
 
-    int err;
+	printk("Bluetooth initialized\n");
 
-    err = bt_enable(NULL);
-    if (err) {
-        printk("Bluetooth init failed (err %d)\n", err);
-        return;
-    }
-    printk("Bluetooth initialized\n");
-
-    bt_conn_cb_register(&conn_callbacks);
-    bt_conn_auth_cb_register(NULL);
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
 
     err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 
@@ -318,4 +313,20 @@ void main(int argc, char *argv[]) {
     }
 
     printk("Scanning successfully started\n");
+}
+
+void main(int argc, char *argv[]) {
+    initialize();
+
+    int err;
+
+    err = bt_enable(bt_ready);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+    printk("Bluetooth initialized\n");
+
+    bt_conn_cb_register(&conn_callbacks);
+    bt_conn_auth_cb_register(NULL);
 }

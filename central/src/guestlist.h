@@ -54,9 +54,7 @@ static bool deserialize_keys(FILE *fp,
                          "(random|public)\\s*"                              // type of addr (3)
                          "([[:xdigit:]]{32})\\s*"                           // irk (4)
                          "([[:xdigit:]]{32})\\s*"                           // ltk (5)
-                         "([[:xdigit:]]{32})\\s*" "([[:digit:]]{1,10})\\s*" // local-csrk with cnt (6,7)
-                         "([[:xdigit:]]{32})\\s*" "([[:digit:]]{1,10})\\s*" // remote-csrk with cnt (8,9)
-                         "([[:xdigit:]]{64})";                              // space-key (10)
+                         "([[:xdigit:]]{64})";                              // space-key (6)
     regex_t rx;
     regmatch_t matches[11];
     regcomp(&rx, rx_str, REG_EXTENDED);
@@ -85,25 +83,8 @@ static bool deserialize_keys(FILE *fp,
             char buf[3] = {line[matches[5].rm_so + (i * 2)], line[matches[5].rm_so + (i * 2) + 1], 0};
             keys->ltk.val[i] = strtol(buf, NULL, 16);
         }
-        for (int i = 0; i < 16; ++i) {
-            char buf[3] = {line[matches[6].rm_so + (i * 2)], line[matches[6].rm_so + (i * 2) + 1], 0};
-            keys->local_csrk.val[i] = strtol(buf, NULL, 16);
-        }
-        for (int i = 0; i < 16; ++i) {
-            char buf[3] = {line[matches[8].rm_so + (i * 2)], line[matches[8].rm_so + (i * 2) + 1], 0};
-            keys->remote_csrk.val[i] = strtol(buf, NULL, 16);
-        }
-        {
-            char buf[11];
-            memset(buf,0,11);
-            strncpy(buf, line + matches[7].rm_so, matches[7].rm_eo - matches[7].rm_so);
-            keys->local_csrk.cnt = strtol(buf, NULL, 10);
-            memset(buf,0,11);
-            strncpy(buf, line + matches[9].rm_so, matches[9].rm_eo - matches[9].rm_so);
-            keys->remote_csrk.cnt = strtol(buf, NULL, 10);
-        }
         for (int i = 0; i < 32; ++i) {
-            char buf[3] = {line[matches[10].rm_so + (i * 2)], line[matches[10].rm_so + (i * 2) + 1], 0};
+            char buf[3] = {line[matches[6].rm_so + (i * 2)], line[matches[6].rm_so + (i * 2) + 1], 0};
             spacekey[i] = strtol(buf, NULL, 16);
         }
     } else {
@@ -144,16 +125,6 @@ static void serialize_keys(struct bt_keys *keys, uint8_t *spacekey,
         fprintf(fp, "%02X", keys->ltk.val[i]);
     }
     fprintf(fp, " ");
-    // local csrk
-    for (size_t i = 0; i < 16; ++i) {
-        fprintf(fp, "%02X", keys->local_csrk.val[i]);
-    }
-    fprintf(fp, " %u ", keys->local_csrk.cnt);
-    // remote csrk
-    for (size_t i = 0; i < 16; ++i) {
-        fprintf(fp, "%02X", keys->remote_csrk.val[i]);
-    }
-    fprintf(fp, " %u ", keys->remote_csrk.cnt);
     // space-key
     for (size_t i = 0; i < 32; ++i) {
         fprintf(fp, "%02X", spacekey[i]);
