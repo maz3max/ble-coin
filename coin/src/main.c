@@ -225,9 +225,4 @@ void main(void) {
   }
   bt_conn_cb_register(&conn_callbacks);
   bt_conn_auth_cb_register(NULL);
-
-  bt_addr_le_t id;
-  bt_addr_le_create_static(&id);
-  // k_sleep(10000);
-  // sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 }
