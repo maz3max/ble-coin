@@ -137,17 +137,12 @@ void main(void) {
     bas_init();
     space_auth_init();
 
-    // enable the bluetooth stack
-    int err;
-    err = bt_enable(bt_ready);
-    if (err) {
-        return;
-    }
-    bt_conn_cb_register(&conn_callbacks);
-    bt_conn_auth_cb_register(NULL);
-
-    bt_addr_le_t id;
-    bt_addr_le_create_static(&id);
-    // k_sleep(10000);
-    // sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
+  // enable the bluetooth stack
+  int err;
+  err = bt_enable(bt_ready);
+  if (err) {
+    return;
+  }
+  bt_conn_cb_register(&conn_callbacks);
+  bt_conn_auth_cb_register(NULL);
 }
