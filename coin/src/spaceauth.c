@@ -50,14 +50,13 @@ static ssize_t read_response(struct bt_conn *conn,
                              BLAKE2S_OUTBYTES);
 }
 
+//TODO: reactivate security measures
 BT_GATT_SERVICE_DEFINE(auth_svc,
                        BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
-                       BT_GATT_CHARACTERISTIC(&auth_challenge_uuid.uuid, BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH,
-                                              BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_AUTHEN |
-                                              BT_GATT_PERM_WRITE_ENCRYPT, NULL, write_challenge, challenge),
+                       BT_GATT_CHARACTERISTIC(&auth_challenge_uuid.uuid, BT_GATT_CHRC_WRITE,
+                                              BT_GATT_PERM_WRITE, NULL, write_challenge, challenge),
                        BT_GATT_CHARACTERISTIC(&auth_response_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE,
-                                              BT_GATT_PERM_READ | BT_GATT_PERM_READ_AUTHEN |
-                                              BT_GATT_PERM_READ_ENCRYPT, read_response, NULL, response),
+                                              BT_GATT_PERM_READ, read_response, NULL, response),
                        BT_GATT_CCC(auth_ccc_cfg, NULL)
 );
 

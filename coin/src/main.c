@@ -62,10 +62,12 @@ static void connected(struct bt_conn *conn, u8_t err) {
         }
         default_conn = bt_conn_ref(conn);
         printk("Connected\n");
+        //TODO: reactivate security measures
+        /*
         if (bt_conn_security(conn, BT_SECURITY_FIPS)) {
             printk("Kill connection: insufficient security\n");
             bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
-        }
+        }*/
     }
 }
 
@@ -92,8 +94,10 @@ static void shutdown(struct k_work *work) { disconnected(NULL, 0); }
 void main(void) {
 
     // set shutdown timer
+    //TODO: reactivate battery saving measures
+    /*
     k_delayed_work_init(&shutdown_timer, shutdown);
-    k_delayed_work_submit(&shutdown_timer, K_SECONDS(30));
+    k_delayed_work_submit(&shutdown_timer, K_SECONDS(30));*/
 
     // initialize own parts
     io_init();
