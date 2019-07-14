@@ -24,16 +24,15 @@ static uint8_t challenge[BLAKE2S_BLOCKBYTES] = {0};
 static uint8_t response[BLAKE2S_OUTBYTES] = {0};
 
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-                        u8_t err)
-{
+                        u8_t err) {
     if (err != 0U) {
-        printk("Indication fail: %i", err);
+        printk("Indication fail: %i\n", err);
     } else {
-        printk("Indication success");
+        printk("Indication success\n");
     }
 }
 
-static struct bt_gatt_indicate_params ind_params = {.data=response,.len=BLAKE2S_OUTBYTES, .attr=NULL, .func=&indicate_cb};
+static struct bt_gatt_indicate_params ind_params = {.data=response, .len=BLAKE2S_OUTBYTES, .attr=NULL, .func=&indicate_cb};
 
 static ssize_t write_challenge(struct bt_conn *conn,
                                const struct bt_gatt_attr *attr,
@@ -69,10 +68,14 @@ static ssize_t write_challenge(struct bt_conn *conn,
     }
 
     memcpy(challenge + offset, buf, len);
+    printk("Write Challenge offset: %i, len: %i\n", offset, len);
 
     if (offset + len == BLAKE2S_BLOCKBYTES) {
         blake2s(response, BLAKE2S_OUTBYTES, challenge, BLAKE2S_BLOCKBYTES, auth_key, BLAKE2S_KEYBYTES);
-        ind_params.attr=&auth_svc.attrs[4];
+        ind_params.attr = &auth_svc.attrs[4];
+        u16_t mtu = bt_gatt_get_mtu(conn);
+        ind_params.len = MIN(mtu - 3, BLAKE2S_OUTBYTES);
+        printk("Connection has MTU: %u\n", mtu);
         bt_gatt_indicate(NULL, &ind_params);
     }
 
