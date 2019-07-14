@@ -1,19 +1,8 @@
-#include <errno.h>
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <string.h>
-
 #include <zephyr.h>
 #include <settings/settings.h>
-
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
 #include "blake2.h"
-
 #include "spaceauth.h"
 
 static struct bt_uuid_128 auth_service_uuid = BT_UUID_INIT_128(
@@ -33,8 +22,6 @@ static struct bt_gatt_ccc_cfg auth_ccc_cfg[BT_GATT_CCC_MAX] = {0};
 static uint8_t auth_key[BLAKE2S_KEYBYTES] = {0};
 static uint8_t challenge[BLAKE2S_BLOCKBYTES] = {0};
 static uint8_t response[BLAKE2S_OUTBYTES] = {0};
-
-static bool new_challenge = false;
 
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                         u8_t err)
