@@ -50,7 +50,7 @@ static void bt_ready(int err) {
 
     settings_load();
 
-    bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+    bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
 }
 
 static void connected(struct bt_conn *conn, u8_t err) {
