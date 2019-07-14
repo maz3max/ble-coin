@@ -20,6 +20,18 @@
 
 #define BLAKE2S_KEYBYTES    32
 
+static struct bt_uuid_128 auth_service_uuid = BT_UUID_INIT_128(
+        0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b,
+        0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66);
+
+static struct bt_uuid_128 auth_challenge_uuid = BT_UUID_INIT_128(
+        0xd5, 0x12, 0x7b, 0x77, 0xce, 0xba, 0xa7, 0xb1,
+        0x86, 0x9a, 0x90, 0x47, 0x02, 0xc9, 0x3d, 0x95);
+
+static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
+        0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95,
+        0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f);
+
 static uint16_t bas_svc_handle = 0;
 static uint16_t bas_blvl_chr_handle = 0;
 static uint16_t bas_blvl_chr_val_handle = 0;
@@ -191,12 +203,6 @@ void initialize(void) {
     bt_keys_foreach(BT_KEYS_ALL, space_save_id, stdout);
 }
 
-void finalize(void) {
-    gl = freopen(NULL, "w+", gl);
-    bt_keys_foreach(BT_KEYS_ALL, space_save_id, gl);
-    fclose(gl);
-}
-
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad) {
     char addr_str[BT_ADDR_LE_STR_LEN];
@@ -225,7 +231,6 @@ static void connected(struct bt_conn *conn, u8_t err) {
 
     if (err) {
         printk("Failed to connect to %s (%u)\n", addr, err);
-        bt_conn_unref(conn);
         int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
         if (error) {
         printk("Scanning failed to start (err %d)\n", error);
@@ -254,8 +259,6 @@ static void disconnected(struct bt_conn *conn, u8_t reason) {
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
     printk("Disconnected: %s (reason %u)\n", addr, reason);
-
-    bt_conn_unref(conn);
 
     err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
     if (err) {
@@ -288,9 +291,6 @@ static struct bt_conn_cb conn_callbacks = {
         .identity_resolved = identity_resolved,
         .security_changed = security_changed,
 };
-
-
-NATIVE_TASK(finalize, ON_EXIT, 0);
 
 static void bt_ready(int err)
 {
