@@ -51,7 +51,5 @@ void main(void) {
   bt_keys_store(&periph_keys);
   printk("Saving SpaceKey\n");
   settings_save_one("space/key", &spacekey, sizeof(spacekey));
-  settings_commit();
-  settings_save();
   printk("Saving Complete!\n");
 }

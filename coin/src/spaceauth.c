@@ -83,10 +83,14 @@ static ssize_t write_challenge(struct bt_conn *conn,
 }
 
 //settings stuff
-static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
-               void *cb_arg) {
-    if (argc == 1) {
-        if (!strcmp(argv[0], "key")) {
+static int set(const char *key, size_t len_rd,
+               settings_read_cb read_cb, void *cb_arg) {
+    int key_len;
+    const char *next;
+
+    key_len = settings_name_next(key, &next);
+    if (!next) {
+        if (!strncmp(key, "key", key_len)) {
             ssize_t len = read_cb(cb_arg, auth_key, BLAKE2S_KEYBYTES);
             if (len != BLAKE2S_KEYBYTES) {
                 memset(auth_key, 0, BLAKE2S_KEYBYTES);
