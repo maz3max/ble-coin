@@ -11,7 +11,6 @@ project(central)
 zephyr_include_directories(
   $ENV{ZEPHYR_BASE}/subsys/bluetooth/host
   ../BLAKE2/ref
-  ${CMAKE_SOURCE_DIR}/../include
 )
 include_directories(/usr/include/)
 
