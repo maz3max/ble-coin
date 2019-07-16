@@ -7,6 +7,10 @@
 #include <adc.h>
 #include <hal/nrf_saadc.h>
 
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(bas);
+
 static u8_t battery = 0U;
 static struct device *adc_dev = NULL;
 
@@ -34,12 +38,12 @@ static struct device *init_adc(void) {
     adc_dev = device_get_binding(ADC_DEVICE_NAME);
 
     if (!adc_dev) {
-        printk("couldn't get ADC dev binding\n");
+        LOG_ERR("couldn't get ADC dev binding");
     }
 
     ret = adc_channel_setup(adc_dev, &m_1st_channel_cfg);
     if (ret != 0) {
-        printk("adc channel config failed with code %i", ret);
+        LOG_ERR("adc channel config failed with code %i", ret);
     }
 
     return adc_dev;
@@ -51,7 +55,7 @@ static u8_t get_batt_percentage() {
     gpio_pin_write(dev, BAT_LOW, 0);
     nrf_saadc_value_t val = 0;
     if (!adc_dev) {
-        printk("OH NOES! NO ADC AVAILABLE!\n");
+        LOG_ERR("OH NOES! NO ADC AVAILABLE!");
     } else {
         int ret;
         const struct adc_sequence sequence = {
@@ -63,10 +67,12 @@ static u8_t get_batt_percentage() {
         };
         ret = adc_read(adc_dev, &sequence);
         if (ret != 0) {
-            printk("ADC read failed with code %i\n", ret);
+            LOG_ERR("ADC read failed with code %i", ret);
         }
     }
     gpio_pin_configure(dev, BAT_LOW, GPIO_DIR_IN);
+
+    LOG_INF("read ADC val: %i", val);
 
     float batt_percentage_f = 0.35156249999999997 * val - 200;
     u8_t batt_percentage =
@@ -94,6 +100,7 @@ BT_GATT_SERVICE_DEFINE(bas_svc,
 );
 
 void bas_init() {
+    LOG_INF("initialize battery service");
     init_adc();
     battery = get_batt_percentage();
 }

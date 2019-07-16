@@ -9,6 +9,10 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/uuid.h>
 
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(app);
+
 //our own stuff
 #include "bas.h"
 #include "spaceauth.h"
@@ -17,10 +21,10 @@
 void sys_pm_notify_power_state_entry(enum power_states state) {
     settings_save();
     if (state == SYS_POWER_STATE_DEEP_SLEEP_1) {
-        printk("Entering DEEP SLEEP\n");
+        LOG_INF("entering DEEP SLEEP");
         set_blink_intensity(BI_OFF);
     } else {
-        printk("Entering state %i", state);
+        LOG_INF("entering state %i", state);
     }
 }
 
@@ -34,7 +38,7 @@ static void connect_bonded(const struct bt_bond_info *info, void *user_data) {
     }
     default_conn = bt_conn_create_slave_le(&info->addr, BT_LE_ADV_CONN);
     if (!default_conn) {
-        printk("Error advertising\n");
+        LOG_ERR("error advertising");
     }
 }
 
@@ -44,7 +48,7 @@ static const struct bt_data ad[] = {
 
 static void bt_ready(int err) {
     if (err) {
-        printk("Bluetooth init failed (err %d)\n", err);
+        LOG_ERR("bluetooth init failed (err %d)", err);
         return;
     }
 
@@ -55,30 +59,30 @@ static void bt_ready(int err) {
 
 static void connected(struct bt_conn *conn, u8_t err) {
     if (err) {
-        printk("Connection failed (err %u)\n", err);
+        LOG_ERR("connection failed (err %u)", err);
     } else {
         if (default_conn) {
             bt_conn_unref(default_conn);
         }
         default_conn = bt_conn_ref(conn);
-        printk("Connected\n");
+        LOG_INF("connected");
         //TODO: reactivate security measures
         /*
         if (bt_conn_security(conn, BT_SECURITY_FIPS)) {
-            printk("Kill connection: insufficient security\n");
+            LOG_INF("Kill connection: insufficient security");
             bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
         }*/
     }
 }
 
 static void disconnected(struct bt_conn *conn, u8_t reason) {
-    printk("Disconnected (reason %u)\n", reason);
+    LOG_INF("disconnected (reason %u)", reason);
 
     if (default_conn) {
         bt_conn_unref(default_conn);
         default_conn = NULL;
     }
-    printk("Going to sleep\n");
+    LOG_INF("going to sleep");
     sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 }
 
@@ -98,12 +102,12 @@ void main(void) {
     /*
     k_delayed_work_init(&shutdown_timer, shutdown);
     k_delayed_work_submit(&shutdown_timer, K_SECONDS(30));*/
-
     // initialize own parts
     io_init();
     bas_init();
     space_auth_init();
 
+    LOG_INF("turning BLE on");
     // enable the bluetooth stack
     int err;
     err = bt_enable(bt_ready);

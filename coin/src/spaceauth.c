@@ -5,6 +5,11 @@
 #include "blake2.h"
 #include "spaceauth.h"
 
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(spaceauth);
+
+
 static struct bt_uuid_128 auth_service_uuid = BT_UUID_INIT_128(
         0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b,
         0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66);
@@ -26,9 +31,9 @@ static uint8_t response[BLAKE2S_OUTBYTES] = {0};
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                         u8_t err) {
     if (err != 0U) {
-        printk("Indication fail: %i\n", err);
+        LOG_INF("indication fail: %i", err);
     } else {
-        printk("Indication success\n");
+        LOG_INF("indication success");
     }
 }
 
@@ -68,14 +73,14 @@ static ssize_t write_challenge(struct bt_conn *conn,
     }
 
     memcpy(challenge + offset, buf, len);
-    printk("Write Challenge offset: %i, len: %i\n", offset, len);
+    LOG_INF("write challenge offset: %i, len: %i", offset, len);
 
     if (offset + len == BLAKE2S_BLOCKBYTES) {
         blake2s(response, BLAKE2S_OUTBYTES, challenge, BLAKE2S_BLOCKBYTES, auth_key, BLAKE2S_KEYBYTES);
         ind_params.attr = &auth_svc.attrs[4];
         u16_t mtu = bt_gatt_get_mtu(conn);
         ind_params.len = MIN(mtu - 3, BLAKE2S_OUTBYTES);
-        printk("Connection has MTU: %u\n", mtu);
+        LOG_INF("connection has MTU: %u", mtu);
         bt_gatt_indicate(NULL, &ind_params);
     }
 
@@ -96,7 +101,7 @@ static int set(const char *key, size_t len_rd,
                 memset(auth_key, 0, BLAKE2S_KEYBYTES);
                 return (len < 0) ? len : -EINVAL;
             }
-            printk("LOADED SPACEKEY\n");
+            LOG_INF("loaded spacekey");
             return 0;
         }
     }
@@ -109,15 +114,16 @@ static struct settings_handler auth_settings = {
 };
 
 void space_auth_init(void) {
+    LOG_INF("initialize space auth");
     int err;
 
     err = settings_subsys_init();
     if (err) {
-        printk("settings_subsys_init failed (err %d)", err);
+        LOG_ERR("settings_subsys_init failed (err %d)", err);
     }
 
     err = settings_register(&auth_settings);
     if (err) {
-        printk("ps_settings_register failed (err %d)", err);
+        LOG_ERR("ps_settings_register failed (err %d)", err);
     }
 }

@@ -1,6 +1,10 @@
 #include "io.h"
 #include <gpio.h>
 
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(io);
+
 #define LED_PORT LED0_GPIO_CONTROLLER
 #define LED LED0_GPIO_PIN
 #define BTN SW0_GPIO_PIN
@@ -15,23 +19,28 @@ static const int aggressive_blink_ms = 125;
 static const int quick_blink_ms = 250;
 static const int slow_blink_ms = 500;
 
-void set_blink_intensity(blink_state_t intensity){
+void set_blink_intensity(blink_state_t intensity) {
     switch (intensity) {
         case BI_ON:
+            LOG_INF("turn LED on");
             k_timer_stop(&blink_timer);
             gpio_pin_write(dev, LED, 1);
             break;
         case BI_AGGRESSIVE:
+            LOG_INF("aggressive LED blink");
             k_timer_start(&blink_timer, K_MSEC(aggressive_blink_ms), K_MSEC(aggressive_blink_ms));
             break;
         case BI_QUICK:
+            LOG_INF("quick LED blink");
             k_timer_start(&blink_timer, K_MSEC(quick_blink_ms), K_MSEC(quick_blink_ms));
             break;
         case BI_SLOW:
+            LOG_INF("slow LED blink");
             k_timer_start(&blink_timer, K_MSEC(slow_blink_ms), K_MSEC(slow_blink_ms));
             break;
         default:
         case BI_OFF:
+            LOG_INF("turn LED off");
             k_timer_stop(&blink_timer);
             gpio_pin_write(dev, LED, 0);
             break;
@@ -44,14 +53,12 @@ static void blink_expiry_function(struct k_timer *timer_id) {
     gpio_pin_write(dev, LED, (blink_counter++) % 2);
 }
 
-// static blink_state_t intensity = BI_ON;
-
 static void button_pressed(struct device *dev, struct gpio_callback *cb, u32_t pins) {
-    // intensity = (intensity + 1) % BI_MAX;
-    // set_blink_intensity(intensity);
+    LOG_INF("button pressed");
 }
 
 void io_init() {
+    LOG_INF("initialize LED and button");
     dev = device_get_binding(LED_PORT);
 
     gpio_pin_configure(dev, LED, GPIO_DIR_OUT);
