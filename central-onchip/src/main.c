@@ -11,7 +11,9 @@ LOG_MODULE_REGISTER(app);
 #include <settings/settings.h>
 
 #include <keys.h> //use of internal keys API
+#include <settings.h> //use of internal settings API
 
+#include "spaceauth.h"
 
 static int parse_addr(const char *addr, bt_addr_le_t *result) {
     if (strlen(addr) != 17) {
@@ -102,11 +104,11 @@ static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
     LOG_INF("valid space key");
 
     //TODO register bt_keys and spacekey
-    /*
+    char key[BT_SETTINGS_KEY_MAX];
+    bt_settings_encode_key(key, sizeof(key), "keys", &keys.addr, NULL);
     bt_keys_store(&keys);
-    //encode spacekey
-    //  settings_save_one("space/key", &spacekey, sizeof(spacekey));
-    */
+    settings_load_subtree(key);
+    spacekey_add(&keys.addr, spacekey);
     //TODO restart discovery
     return 0;
 }
@@ -131,13 +133,11 @@ static int cmd_coin_del(const struct shell *shell, size_t argc, char **argv) {
     shell_print(shell, "parsed BLE addr [%s]", addr_str);
 
     //TODO unpair bt_keys and spacekey
-    /*
     ret = bt_unpair(BT_ID_DEFAULT, &addr);
     if (ret) {
         LOG_ERR("could not unpair this address (err %d)", ret);
     }
-    //settings_delete(key);
-    */
+    spacekey_del(&addr);
 
     return 0;
 }
