@@ -8,30 +8,30 @@
 LOG_MODULE_REGISTER(app);
 
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
 #include <settings/settings.h>
+
 #include <keys.h> //use of internal keys API
 
 
 static int parse_addr(const char *addr, bt_addr_le_t *result) {
     if (strlen(addr) != 17) {
         LOG_ERR("wrong address length");
-        return EINVAL;
+        return -EINVAL;
     } else {
-        for (int i = 2; i < 15; i += 3) {
+        for (size_t i = 2; i < 15; i += 3) {
             if (addr[i] != ':') {
                 LOG_ERR("invalid address");
-                return EINVAL;
+                return -EINVAL;
             }
         }
-        for (int i = 0; i < 6; ++i) {
-            int off = 3 * i;
+        for (size_t i = 0; i < 6; ++i) {
+            size_t off = 3 * i;
             char buf[3] = {addr[off], addr[off + 1], 0};
             if (isxdigit(buf[0]) && isxdigit(buf[1])) {
                 result->a.val[5 - i] = strtol(buf, NULL, 16);
             } else {
                 LOG_ERR("invalid address");
-                return EINVAL;
+                return -EINVAL;
             }
         }
     }
@@ -40,18 +40,18 @@ static int parse_addr(const char *addr, bt_addr_le_t *result) {
     return 0;
 }
 
-static int parse_hex(const char *str, const uint32_t n, uint8_t *out) {
+static int parse_hex(const char *str, const size_t n, uint8_t *out) {
     if (strlen(str) != 2 * n) {
         LOG_ERR("wrong hex string length");
-        return EINVAL;
+        return -EINVAL;
     }
-    for (uint32_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; ++i) {
         char buf[] = {str[2 * i], str[2 * i + 1], 0};
         if (isxdigit(buf[0]) && isxdigit(buf[1])) {
             out[i] = strtol(buf, NULL, 16);
         } else {
             LOG_ERR("invalid hex string");
-            return EINVAL;
+            return -EINVAL;
         }
     }
     LOG_HEXDUMP_INF(out, n, "parsed data");
