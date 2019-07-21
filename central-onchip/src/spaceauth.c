@@ -22,9 +22,11 @@ static size_t largest_index_used = 0;
 
 void spacekeys_print(const struct shell *shell) {
     shell_print(shell, "printing all spacekeys...");
-    for (size_t i = 0; i < largest_index_used; ++i) {
+    for (size_t i = 0; i <= largest_index_used; ++i) {
         if (bt_addr_cmp(&NO_ADDR, &keys[i].addr.a) != 0) {
-            shell_print(shell, "[%s] : %02X...", bt_addr_le_str(&keys[i].addr), keys->key[0]);
+            shell_print(shell, "[%02X:%02X:%02X:%02X:%02X:%02X] : %02X...", keys[i].addr.a.val[5],
+                        keys[i].addr.a.val[4], keys[i].addr.a.val[3], keys[i].addr.a.val[2], keys[i].addr.a.val[1],
+                        keys[i].addr.a.val[0], keys[i].key[0]);
         }
     }
 }
@@ -76,7 +78,7 @@ static spacekey_t *spacekey_lookup_add(const bt_addr_le_t *addr) {
 }
 
 spacekey_t *spacekey_lookup(const bt_addr_le_t *addr) {
-    for (size_t i = 0; i < largest_index_used; ++i) {
+    for (size_t i = 0; i <= largest_index_used; ++i) {
         if (!bt_addr_le_cmp(addr, &keys[i].addr)) {
             return &keys[i];
         }
@@ -129,6 +131,7 @@ int spacekey_add(const bt_addr_le_t *addr, const uint8_t *key) {
     if (!slot) {
         return -ENOSPC;
     }
+    memcpy(&slot->addr, addr, sizeof(bt_addr_le_t));
     memcpy(slot->key, key, BLAKE2S_KEYBYTES);
     settings_save_one(path, key, BLAKE2S_KEYBYTES);
     return 0;

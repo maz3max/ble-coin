@@ -52,8 +52,4 @@ int spaceauth_validate(const bt_addr_le_t *addr, const uint8_t *challenge, const
  */
 void spaceauth_init();
 
-// import internal API stuff for printing (this is really handy!)
-const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
-#define bt_addr_le_str(addr) log_strdup(bt_addr_le_str_real(addr))
-
 #endif //SPACEAUTH_H

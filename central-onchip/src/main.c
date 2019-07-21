@@ -104,11 +104,16 @@ static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
     LOG_INF("valid space key");
 
     //TODO register bt_keys and spacekey
+    ret = spacekey_add(&keys.addr, spacekey);
+    if (ret) {
+        LOG_ERR("spacekey_add failed with %i", ret);
+        //TODO restart discovery
+        return ret;
+    }
     char key[BT_SETTINGS_KEY_MAX];
     bt_settings_encode_key(key, sizeof(key), "keys", &keys.addr, NULL);
     bt_keys_store(&keys);
     settings_load_subtree(key);
-    spacekey_add(&keys.addr, spacekey);
     //TODO restart discovery
     return 0;
 }
@@ -158,7 +163,9 @@ static int cmd_print_spacekeys(const struct shell *shell, size_t argc, char **ar
 
 static void print_key(struct bt_keys *keys, void *data) {
     const struct shell *shell = data;
-    shell_print(shell, "[%s] keys: %u, flags: %u", bt_addr_le_str(&keys->addr), keys->keys, keys->flags);
+    shell_print(shell, "[%02X:%02X:%02X:%02X:%02X:%02X] keys: %u, flags: %u", keys->addr.a.val[5], keys->addr.a.val[4],
+                keys->addr.a.val[3], keys->addr.a.val[2], keys->addr.a.val[1], keys->addr.a.val[0], keys->keys,
+                keys->flags);
 }
 
 static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) {
@@ -178,4 +185,5 @@ SHELL_CMD_REGISTER(stats, &sub_stats, "commands to print internal state", NULL);
 
 void main(void) {
     spaceauth_init();
+    settings_load();
 }
