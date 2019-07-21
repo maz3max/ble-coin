@@ -32,7 +32,7 @@ void spacekeys_print(const struct shell *shell) {
 }
 
 static void space_settings_encode_key(char *path, size_t path_size, const bt_addr_le_t *addr) {
-    assert(path_size > 13)
+    assert(path_size > 19)
     snprintk(path, path_size, "space/%02x%02x%02x%02x%02x%02x%u",
              addr->a.val[5], addr->a.val[4], addr->a.val[3],
              addr->a.val[2], addr->a.val[1], addr->a.val[0],
@@ -40,10 +40,7 @@ static void space_settings_encode_key(char *path, size_t path_size, const bt_add
 }
 
 
-static int space_settings_decode_key(const char *key, int key_len, bt_addr_le_t *addr) {
-    if (key_len != 13) {
-        return -EINVAL;
-    }
+static int space_settings_decode_key(const char *key, bt_addr_le_t *addr) {
     for (size_t i = 0; i < 6; ++i) {
         char buf[] = {key[2 * i], key[2 * i + 1], 0};
         if (isxdigit(buf[0]) && isxdigit(buf[1])) {
@@ -93,7 +90,7 @@ static int space_settings_set(const char *key, size_t len_rd,
     int key_len = settings_name_next(key, &next);
     if (!next) {
         bt_addr_le_t addr;
-        if (!space_settings_decode_key(key, key_len, &addr)) {
+        if (!space_settings_decode_key(key, &addr)) {
             spacekey_t *slot = spacekey_lookup_add(&addr);
             if (!slot) {
                 return -ENOSPC;
@@ -104,10 +101,11 @@ static int space_settings_set(const char *key, size_t len_rd,
                 return 0;
             }
             if (len != BLAKE2S_KEYBYTES) {
+                LOG_ERR("key has invalid length l=%i", len);
                 return (len < 0) ? len : -EINVAL;
             }
             memcpy(&slot->addr, &addr, sizeof(bt_addr_le_t));
-            LOG_INF("saved new spaceauth key");
+            LOG_INF("loaded new spaceauth key");
             return 0;
         } else {
             return -EINVAL;
@@ -125,7 +123,7 @@ int spacekey_add(const bt_addr_le_t *addr, const uint8_t *key) {
     if (!bt_addr_cmp(&addr->a, &NO_ADDR)) {
         return -EINVAL;
     }
-    char path[14];
+    char path[20];
     space_settings_encode_key(path, sizeof(path), addr);
     spacekey_t *slot = spacekey_lookup_add(addr);
     if (!slot) {
