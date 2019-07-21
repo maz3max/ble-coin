@@ -143,7 +143,7 @@ int spacekey_del(const bt_addr_le_t *addr) {
     if (!slot) {
         return -ENOENT;
     }
-    char path[14];
+    char path[20];
     space_settings_encode_key(path, sizeof(path), addr);
     settings_delete(path);
     memset(&slot->addr, 0, sizeof(slot->addr));
