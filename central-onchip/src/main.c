@@ -152,6 +152,30 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_coin,
 /* Creating root (level 0) command "coin" */
 SHELL_CMD_REGISTER(coin, &sub_coin, "commands to manage coins", NULL);
 
+static int cmd_print_spacekeys(const struct shell *shell, size_t argc, char **argv) {
+    spacekeys_print(shell);
+}
+
+static void print_key(struct bt_keys *keys, void *data) {
+    const struct shell *shell = data;
+    shell_print(shell, "[%s] keys: %u, flags: %u", bt_addr_le_str(&keys->addr), keys->keys, keys->flags);
+}
+
+static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) {
+    shell_print(shell, "printing all spacekeys...");
+    bt_keys_foreach(BT_KEYS_ALL, print_key, shell);
+}
+
+
+/* Creating subcommands (level 1 command) array for command "coin". */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_stats,
+                               SHELL_CMD(spacekey, NULL, "prints space keys", cmd_print_spacekeys),
+                               SHELL_CMD(bonds, NULL, "prints bonds", cmd_print_bonds),
+                               SHELL_SUBCMD_SET_END
+);
+/* Creating root (level 0) command "coin" */
+SHELL_CMD_REGISTER(stats, &sub_stats, "commands to print internal state", NULL);
+
 void main(void) {
-    settings_subsys_init();
+    spaceauth_init();
 }

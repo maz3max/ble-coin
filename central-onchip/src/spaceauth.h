@@ -2,12 +2,19 @@
 #define SPACEAUTH_H
 
 #include <bluetooth/bluetooth.h>
+#include <shell/shell.h>
 #include <errno.h>
 
 typedef struct spacekey_t {
     bt_addr_le_t addr;
     uint8_t key[32];
 } spacekey_t;
+
+/**
+ * Prints all registered spacekeys.
+ * @param shell shell to be used for printing.
+ */
+void spacekeys_print(const struct shell *shell);
 
 /**
  * For a given address, look up the spacekey struct.
@@ -44,5 +51,9 @@ int spaceauth_validate(const bt_addr_le_t *addr, const uint8_t *challenge, const
  * Initialize spaceauth settings handler.
  */
 void spaceauth_init();
+
+// import internal API stuff for printing (this is really handy!)
+const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
+#define bt_addr_le_str(addr) log_strdup(bt_addr_le_str_real(addr))
 
 #endif //SPACEAUTH_H

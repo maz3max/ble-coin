@@ -20,6 +20,15 @@ static spacekey_t keys[CONFIG_BT_MAX_PAIRED] = {0};
 static const bt_addr_t NO_ADDR = {0};
 static size_t largest_index_used = 0;
 
+void spacekeys_print(const struct shell *shell) {
+    shell_print(shell, "printing all spacekeys...");
+    for (size_t i = 0; i < largest_index_used; ++i) {
+        if (bt_addr_cmp(&NO_ADDR, &keys[i].addr.a) != 0) {
+            shell_print(shell, "[%s] : %02X...", bt_addr_le_str(&keys[i].addr), keys->key[0]);
+        }
+    }
+}
+
 static void space_settings_encode_key(char *path, size_t path_size, const bt_addr_le_t *addr) {
     assert(path_size > 13)
     snprintk(path, path_size, "space/%02x%02x%02x%02x%02x%02x%u",
