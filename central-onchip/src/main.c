@@ -9,9 +9,12 @@ LOG_MODULE_REGISTER(app);
 
 #include <bluetooth/bluetooth.h>
 #include <settings/settings.h>
+#include <power/reboot.h>
 
 #include <keys.h> //use of internal keys API
 #include <settings.h> //use of internal settings API
+
+#include <storage/flash_map.h>
 
 #include "spaceauth.h"
 
@@ -169,8 +172,29 @@ static void print_key(struct bt_keys *keys, void *data) {
 }
 
 static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) {
-    shell_print(shell, "printing all spacekeys...");
+    shell_print(shell, "printing all bonds...");
     bt_keys_foreach(BT_KEYS_ALL, print_key, shell);
+}
+
+static int cmd_load_settings(const struct shell *shell, size_t argc, char **argv) {
+    settings_load();
+}
+
+static int cmd_delete_settings(const struct shell *shell, size_t argc, char **argv) {
+    settings_delete(argv[0]);
+}
+
+static int cmd_clear_all_settings(const struct shell *shell, size_t argc, char **argv) {
+    const struct flash_area *fap;
+    flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+    int rc = flash_area_erase(fap, 0, fap->fa_size);
+    if (rc != 0) {
+        LOG_ERR("cannot get flash area");
+    }
+}
+
+static int cmd_reboot(const struct shell *shell, size_t argc, char **argv) {
+    sys_reboot(SYS_REBOOT_COLD);
 }
 
 
@@ -183,7 +207,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_stats,
 /* Creating root (level 0) command "coin" */
 SHELL_CMD_REGISTER(stats, &sub_stats, "commands to print internal state", NULL);
 
+SHELL_CMD_REGISTER(load_settings, NULL, "loads settings", cmd_load_settings);
+SHELL_CMD_REGISTER(del_settings, NULL, "deletes setting", cmd_delete_settings);
+SHELL_CMD_REGISTER(reboot, NULL, "perform cold system reboot", cmd_reboot);
+SHELL_CMD_REGISTER(del_all_settings, NULL, "deletes all settings", cmd_clear_all_settings);
+
 void main(void) {
     spaceauth_init();
-    settings_load();
 }
