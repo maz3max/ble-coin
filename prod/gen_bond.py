@@ -5,7 +5,7 @@ import fcntl
 import os
 import binascii
 
-id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public)\s*([0-9a-fA-F]{32})"
+id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
 
 
 def byte_str_to_c_def(s):
@@ -15,7 +15,7 @@ def byte_str_to_c_def(s):
 
 def addr_to_str(addr, addr_type="random"):
     hex_arr = ["%02X" % b for b in addr[::-1]]
-    return ":".join(hex_arr) + " " + addr_type
+    return ":".join(hex_arr)
 
 
 def addr_to_c_def(addr, addr_type="random"):
@@ -49,6 +49,8 @@ def parse_id_line(line):
         hex_arr = a.split(":")
         addr = bytes([int(b, 16) for b in hex_arr[::-1]])
         addr_type = m.group(2)
+        if not addr_type:
+            addr_type = "random"
         return addr, addr_type, binascii.unhexlify(m.group(3))
     else:
         raise ValueError("Could not parse line")
