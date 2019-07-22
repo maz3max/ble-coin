@@ -122,10 +122,6 @@ static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
 }
 
 static int cmd_coin_del(const struct shell *shell, size_t argc, char **argv) {
-    shell_print(shell, "argc = %d", argc);
-    for (size_t cnt = 0; cnt < argc; cnt++) {
-        shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
-    }
     bt_addr_le_t addr;
     if (argc != 2) {
         LOG_ERR("incorrect number of arguments");
@@ -212,6 +208,27 @@ SHELL_CMD_REGISTER(del_settings, NULL, "deletes setting", cmd_delete_settings);
 SHELL_CMD_REGISTER(reboot, NULL, "perform cold system reboot", cmd_reboot);
 SHELL_CMD_REGISTER(del_all_settings, NULL, "deletes all settings", cmd_clear_all_settings);
 
+
+static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv) {
+    bt_addr_le_t addr;
+    int ret = parse_addr(argv[1], &addr);
+    if (ret) {
+        return ret;
+    }
+    LOG_INF("valid address");
+    uint8_t irk[16];
+    ret = parse_hex(argv[2], 16, irk);
+    if (ret) {
+        return ret;
+    }
+    LOG_INF("valid IRK");
+    settings_save_one("bt/irk", irk, sizeof(irk));
+    settings_save_one("bt/id", &addr, sizeof(bt_addr_le_t));
+    settings_load_subtree("bt/irk");
+    settings_load_subtree("bt/id");
+}
+
+SHELL_CMD_REGISTER(central_setup, NULL, "usage: central_setup <addr> <irk>", cmd_central_setup);
 void main(void) {
     spaceauth_init();
 }
