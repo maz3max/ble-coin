@@ -13,8 +13,11 @@ LOG_MODULE_REGISTER(app);
 
 #include <keys.h> //use of internal keys API
 #include <settings.h> //use of internal settings API
+#include <hci_core.h> //use of internal hci API
 
 #include <storage/flash_map.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
 
 #include "spaceauth.h"
 
@@ -229,6 +232,294 @@ static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv
 }
 
 SHELL_CMD_REGISTER(central_setup, NULL, "usage: central_setup <addr> <irk>", cmd_central_setup);
+
+static struct bt_uuid_128 auth_service_uuid = BT_UUID_INIT_128(
+        0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b,
+        0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66);
+
+static struct bt_uuid_128 auth_challenge_uuid = BT_UUID_INIT_128(
+        0xd5, 0x12, 0x7b, 0x77, 0xce, 0xba, 0xa7, 0xb1,
+        0x86, 0x9a, 0x90, 0x47, 0x02, 0xc9, 0x3d, 0x95);
+
+static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
+        0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95,
+        0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f);
+
+static uint16_t bas_svc_handle = 0;
+static uint16_t bas_blvl_chr_handle = 0;
+static uint16_t bas_blvl_chr_val_handle = 0;
+static uint16_t auth_svc_handle = 0;
+static uint16_t auth_challenge_chr_handle = 0;
+static uint16_t auth_challenge_chr_value_handle = 0;
+static uint16_t auth_response_chr_handle = 0;
+static uint16_t auth_response_chr_value_handle = 0;
+static uint16_t auth_response_chr_ccc_handle = 0;
+
+uint8_t challenge[16];
+
+
+static u8_t discover_func(struct bt_conn *conn,
+                          const struct bt_gatt_attr *attr,
+                          struct bt_gatt_discover_params *params);
+
+static u8_t notify_func(struct bt_conn *conn,
+                        struct bt_gatt_subscribe_params *params,
+                        const void *data, u16_t length){
+    if (!data) {
+        LOG_INF("[UNSUBSCRIBED]");
+        params->value_handle = 0U;
+        return BT_GATT_ITER_STOP;
+    }
+
+    LOG_INF("[NOTIFICATION] data %p length %u", data, length);
+
+    return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_discover_params discover_params = {
+        .uuid = &auth_service_uuid.uuid,
+        .type = BT_GATT_DISCOVER_PRIMARY,
+        .func = &discover_func,
+        .start_handle = 0x0001,
+        .end_handle = 0xffff,
+};
+static struct bt_gatt_subscribe_params subscribe_params = {
+        .value = BT_GATT_CCC_INDICATE,
+        .flags = 0,
+        .notify = notify_func,
+};
+
+static u8_t discover_func(struct bt_conn *conn,
+                          const struct bt_gatt_attr *attr,
+                          struct bt_gatt_discover_params *params) {
+    int err;
+
+    if (!attr) {
+        LOG_INF("Discover complete");
+        (void) memset(params, 0, sizeof(*params));
+        int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
+        if (ret) {
+            LOG_INF("Kill connection: insufficient security %i", ret);
+            bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
+        } else {
+            LOG_INF("bt_conn_security successful");
+        }
+        return BT_GATT_ITER_STOP;
+    }
+    LOG_INF("[ATTRIBUTE] handle %u", attr->handle);
+
+    if (!bt_uuid_cmp(params->uuid, &auth_service_uuid.uuid)) {
+        LOG_INF("found auth service handle");
+        auth_svc_handle = attr->handle;
+        //next up: search challenge chr
+        discover_params.uuid = &auth_challenge_uuid.uuid;
+        discover_params.start_handle = attr->handle + 1;
+        discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+        err = bt_gatt_discover(conn, &discover_params);
+        if (err) {
+            LOG_ERR("challenge chr discovery failed (err %d)", err);
+        }
+    } else if (!bt_uuid_cmp(params->uuid, &auth_challenge_uuid.uuid)) {
+        LOG_INF("found auth challenge chr handle");
+        auth_challenge_chr_handle = attr->handle;
+        auth_challenge_chr_value_handle = attr->handle + 1;
+        //next up: search response chr
+        discover_params.start_handle = attr->handle + 2;
+        discover_params.uuid = &auth_response_uuid.uuid;
+
+        err = bt_gatt_discover(conn, &discover_params);
+        if (err) {
+            LOG_ERR("challenge chr discovery failed (err %d)", err);
+        }
+    } else if (!bt_uuid_cmp(params->uuid, &auth_response_uuid.uuid)) {
+        LOG_INF("found auth response chr handle");
+        auth_response_chr_handle = attr->handle;
+        auth_response_chr_value_handle = attr->handle + 1;
+        subscribe_params.value_handle = attr->handle + 1; // TODO
+
+        //next up: search response chr cccd
+        discover_params.start_handle = attr->handle + 2;
+        discover_params.uuid = BT_UUID_GATT_CCC;
+        discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+
+        err = bt_gatt_discover(conn, &discover_params);
+        if (err) {
+            LOG_INF("Discover failed (err %d)", err);
+        }
+    } else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
+        LOG_INF("found auth response chr cccd handle");
+        auth_response_chr_ccc_handle = attr->handle;
+        subscribe_params.ccc_handle = attr->handle;
+
+        err = bt_gatt_subscribe(conn, &subscribe_params);
+        if (err && err != -EALREADY) {
+            LOG_INF("Subscribe failed (err %d)", err);
+        } else {
+            LOG_INF("[SUBSCRIBED]");
+        }
+
+        //next up: search bas svc
+        discover_params.uuid = BT_UUID_BAS;
+        discover_params.start_handle = 0;
+        discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+
+        err = bt_gatt_discover(conn, &discover_params);
+        if (err) {
+            LOG_INF("Discover failed (err %d)", err);
+        }
+    } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS)) {
+        LOG_INF("found bas svc handle");
+        bas_svc_handle = attr->handle;
+
+        //next up: search bas blvl chr
+        discover_params.start_handle = attr->handle + 1;
+        discover_params.uuid = BT_UUID_BAS_BATTERY_LEVEL;
+        discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+
+        err = bt_gatt_discover(conn, &discover_params);
+        if (err) {
+            LOG_INF("Discover failed (err %d)", err);
+        }
+    } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS_BATTERY_LEVEL)) {
+        LOG_INF("found bas blvl chr handle");
+        bas_blvl_chr_handle = attr->handle;
+        bas_blvl_chr_val_handle = attr->handle + 1; // TODO
+
+        return BT_GATT_ITER_STOP;
+    }
+    return BT_GATT_ITER_STOP;
+}
+
+static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
+                         struct net_buf_simple *ad) {
+
+    LOG_INF("Device found: [%02X:%02X:%02X:%02X:%02X:%02X] (RSSI %d) (TYPE %u) (BONDED %u)", addr->a.val[5],
+            addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1], addr->a.val[0], rssi, type,
+            bt_addr_le_is_bonded(BT_ID_DEFAULT, addr));
+
+    /* We're only interested in directed connectable events from bonded devices*/
+    if ((type != BT_LE_ADV_DIRECT_IND && type != BT_LE_ADV_IND) || !bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+        return;
+    }
+
+    LOG_INF("Connecting to device...");
+
+    if (bt_le_scan_stop()) {
+        bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+    }
+
+    bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+
+}
+
+static void connected(struct bt_conn *conn, u8_t err) {
+    char addr[BT_ADDR_LE_STR_LEN];
+
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+    if (err) {
+        LOG_INF("Failed to connect to %s (%u)", log_strdup(addr), err);
+        int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+        if (error) {
+            LOG_INF("Scanning failed to start (err %d)", error);
+        }
+        return;
+    }
+    /*
+    int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
+    if (ret) {
+        LOG_INF("Kill connection: insufficient security %i", ret);
+        bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
+    } else {
+        LOG_INF("bt_conn_security successful");
+    }*/
+
+    LOG_INF("Starting Discovery...");
+    err = bt_gatt_discover(conn, &discover_params);
+    if (err) {
+        LOG_INF("Discover failed(err %d)", err);
+        return;
+    }
+
+}
+
+static void disconnected(struct bt_conn *conn, u8_t reason) {
+    char addr[BT_ADDR_LE_STR_LEN];
+    int err;
+
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+    LOG_INF("Disconnected: %s (reason %u)", log_strdup(addr), reason);
+
+    err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+    if (err) {
+        LOG_ERR("Scanning failed to start (err %d)", err);
+    }
+}
+
+static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
+                              const bt_addr_le_t *identity) {
+    char addr_identity[BT_ADDR_LE_STR_LEN];
+    char addr_rpa[BT_ADDR_LE_STR_LEN];
+
+    bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+    bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+
+    LOG_INF("Identity resolved %s -> %s", log_strdup(addr_rpa), log_strdup(addr_identity));
+}
+
+static void security_changed(struct bt_conn *conn, bt_security_t level) {
+    char addr[BT_ADDR_LE_STR_LEN];
+
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+    LOG_INF("Security changed: %s level %u", log_strdup(addr), level);
+}
+
+static struct bt_conn_cb conn_callbacks = {
+        .connected = connected,
+        .disconnected = disconnected,
+        .identity_resolved = identity_resolved,
+        .security_changed = security_changed,
+};
+
+static void bt_ready(int err) {
+    if (err) {
+        LOG_INF("Bluetooth init failed (err %d)", err);
+        return;
+    }
+
+    LOG_INF("Bluetooth initialized");
+
+    if (IS_ENABLED(CONFIG_SETTINGS)) {
+        settings_load();
+    }
+
+    err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+
+    if (err) {
+        LOG_ERR("Scanning failed to start (err %d)", err);
+        return;
+    }
+
+    LOG_INF("Scanning successfully started");
+}
+
+static int cmd_ble_start(const struct shell *shell, size_t argc, char **argv) {
+    int err = bt_enable(bt_ready);
+    if (err) {
+        LOG_ERR("Bluetooth init failed (err %d)", err);
+        return err;
+    }
+    bt_conn_cb_register(&conn_callbacks);
+    bt_conn_auth_cb_register(NULL);
+    LOG_INF("Bluetooth initialized");
+}
+
+SHELL_CMD_REGISTER(ble_start, NULL, "start ble", cmd_ble_start);
+
+
 void main(void) {
     spaceauth_init();
 }
