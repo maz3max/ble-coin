@@ -93,7 +93,13 @@ static struct bt_conn_cb conn_callbacks = {
 
 static struct k_delayed_work shutdown_timer;
 
-static void shutdown(struct k_work *work) { disconnected(NULL, 0); }
+static void shutdown(struct k_work *work) {
+    if(default_conn){
+        bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    } else {
+        disconnected(NULL, 0);
+    }
+}
 
 void main(void) {
 
