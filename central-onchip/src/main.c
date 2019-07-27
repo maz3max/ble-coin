@@ -247,6 +247,9 @@ static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
         0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95,
         0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f);
 
+static struct bt_uuid_16 bas_service_uuid = BT_UUID_INIT_16(0x180f);
+static struct bt_uuid_16 bas_blvl_uuid = BT_UUID_INIT_16(0x2a19);
+
 static uint16_t bas_svc_handle = 0;
 static uint16_t bas_blvl_chr_handle = 0;
 static uint16_t bas_blvl_chr_val_handle = 0;
@@ -290,93 +293,89 @@ static u8_t discover_func(struct bt_conn *conn,
                           struct bt_gatt_discover_params *params) {
     int err;
 
-    if (!attr) {
-        LOG_INF("Discover complete");
-        (void) memset(params, 0, sizeof(*params));
-        int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
-        return BT_GATT_ITER_STOP;
-    }
-    LOG_INF("[ATTRIBUTE] handle %u", attr->handle);
+    if (attr) {
+        LOG_INF("[ATTRIBUTE] handle %u", attr->handle);
 
-    if (!bt_uuid_cmp(params->uuid, &auth_service_uuid.uuid)) {
-        LOG_INF("found auth service handle");
-        auth_svc_handle = attr->handle;
-        //next up: search challenge chr
-        discover_params.uuid = &auth_challenge_uuid.uuid;
-        discover_params.start_handle = attr->handle + 1;
-        discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+        if (!bt_uuid_cmp(params->uuid, &auth_service_uuid.uuid)) {
+            LOG_INF("found auth service handle");
+            auth_svc_handle = attr->handle;
+            //next up: search challenge chr
+            discover_params.uuid = &auth_challenge_uuid.uuid;
+            discover_params.start_handle = attr->handle + 1;
+            discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
-        err = bt_gatt_discover(conn, &discover_params);
-        if (err) {
-            LOG_ERR("challenge chr discovery failed (err %d)", err);
+            err = bt_gatt_discover(default_conn, &discover_params);
+            if (err) {
+                LOG_ERR("challenge chr discovery failed (err %d)", err);
+            }
+        } else if (!bt_uuid_cmp(params->uuid, &auth_challenge_uuid.uuid)) {
+            LOG_INF("found auth challenge chr handle");
+            auth_challenge_chr_handle = attr->handle;
+            auth_challenge_chr_value_handle = attr->handle + 1;
+            //next up: search response chr
+            discover_params.start_handle = attr->handle + 2;
+            discover_params.uuid = &auth_response_uuid.uuid;
+
+            err = bt_gatt_discover(default_conn, &discover_params);
+            if (err) {
+                LOG_ERR("challenge chr discovery failed (err %d)", err);
+            }
+        } else if (!bt_uuid_cmp(params->uuid, &auth_response_uuid.uuid)) {
+            LOG_INF("found auth response chr handle");
+            auth_response_chr_handle = attr->handle;
+            auth_response_chr_value_handle = attr->handle + 1;
+            subscribe_params.value_handle = attr->handle + 1; // TODO
+
+            //next up: search response chr cccd
+            discover_params.start_handle = attr->handle + 2;
+            discover_params.uuid = BT_UUID_GATT_CCC;
+            discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+
+            err = bt_gatt_discover(default_conn, &discover_params);
+            if (err) {
+                LOG_INF("Discover failed (err %d)", err);
+            }
+        } else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
+            LOG_INF("found auth response chr cccd handle");
+            auth_response_chr_ccc_handle = attr->handle;
+            subscribe_params.ccc_handle = attr->handle;
+
+            err = bt_gatt_subscribe(default_conn, &subscribe_params);
+            if (err && err != -EALREADY) {
+                LOG_INF("Subscribe failed (err %d)", err);
+            } else {
+                LOG_INF("[SUBSCRIBED]");
+            }
+
+            //next up: search bas svc
+            discover_params.uuid = &bas_service_uuid.uuid;
+            discover_params.start_handle = 0x0001;
+            discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+
+            err = bt_gatt_discover(default_conn, &discover_params);
+            if (err) {
+                LOG_INF("Discover failed (err %d)", err);
+            }
+        } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS)) {
+            LOG_INF("found bas svc handle");
+            bas_svc_handle = attr->handle;
+
+            //next up: search bas blvl chr
+            discover_params.start_handle = attr->handle + 1;
+            discover_params.uuid = &bas_blvl_uuid.uuid;
+            discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+
+            err = bt_gatt_discover(default_conn, &discover_params);
+            if (err) {
+                LOG_INF("Discover failed (err %d)", err);
+            }
+        } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS_BATTERY_LEVEL)) {
+            LOG_INF("found bas blvl chr handle");
+            bas_blvl_chr_handle = attr->handle;
+            bas_blvl_chr_val_handle = attr->handle + 1;
+            LOG_INF("Discover complete");
+            (void) memset(params, 0, sizeof(*params));
         }
-    } else if (!bt_uuid_cmp(params->uuid, &auth_challenge_uuid.uuid)) {
-        LOG_INF("found auth challenge chr handle");
-        auth_challenge_chr_handle = attr->handle;
-        auth_challenge_chr_value_handle = attr->handle + 1;
-        //next up: search response chr
-        discover_params.start_handle = attr->handle + 2;
-        discover_params.uuid = &auth_response_uuid.uuid;
-
-        err = bt_gatt_discover(conn, &discover_params);
-        if (err) {
-            LOG_ERR("challenge chr discovery failed (err %d)", err);
-        }
-    } else if (!bt_uuid_cmp(params->uuid, &auth_response_uuid.uuid)) {
-        LOG_INF("found auth response chr handle");
-        auth_response_chr_handle = attr->handle;
-        auth_response_chr_value_handle = attr->handle + 1;
-        subscribe_params.value_handle = attr->handle + 1; // TODO
-
-        //next up: search response chr cccd
-        discover_params.start_handle = attr->handle + 2;
-        discover_params.uuid = BT_UUID_GATT_CCC;
-        discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
-
-        err = bt_gatt_discover(conn, &discover_params);
-        if (err) {
-            LOG_INF("Discover failed (err %d)", err);
-        }
-    } else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
-        LOG_INF("found auth response chr cccd handle");
-        auth_response_chr_ccc_handle = attr->handle;
-        subscribe_params.ccc_handle = attr->handle;
-
-        err = bt_gatt_subscribe(conn, &subscribe_params);
-        if (err && err != -EALREADY) {
-            LOG_INF("Subscribe failed (err %d)", err);
-        } else {
-            LOG_INF("[SUBSCRIBED]");
-        }
-
-        //next up: search bas svc
-        discover_params.uuid = BT_UUID_BAS;
-        discover_params.start_handle = 0;
-        discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-
-        err = bt_gatt_discover(conn, &discover_params);
-        if (err) {
-            LOG_INF("Discover failed (err %d)", err);
-        }
-    } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS)) {
-        LOG_INF("found bas svc handle");
-        bas_svc_handle = attr->handle;
-
-        //next up: search bas blvl chr
-        discover_params.start_handle = attr->handle + 1;
-        discover_params.uuid = BT_UUID_BAS_BATTERY_LEVEL;
-        discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
-
-        err = bt_gatt_discover(conn, &discover_params);
-        if (err) {
-            LOG_INF("Discover failed (err %d)", err);
-        }
-    } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS_BATTERY_LEVEL)) {
-        LOG_INF("found bas blvl chr handle");
-        bas_blvl_chr_handle = attr->handle;
-        bas_blvl_chr_val_handle = attr->handle + 1; // TODO
-
-        return BT_GATT_ITER_STOP;
     }
     return BT_GATT_ITER_STOP;
 }
