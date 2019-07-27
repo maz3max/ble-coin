@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(app);
 
 #include "spaceauth.h"
 
+static struct bt_conn *default_conn;
+
 static int parse_addr(const char *addr, bt_addr_le_t *result) {
     if (strlen(addr) != 17) {
         LOG_ERR("wrong address length");
@@ -264,7 +266,7 @@ static u8_t discover_func(struct bt_conn *conn,
 
 static u8_t notify_func(struct bt_conn *conn,
                         struct bt_gatt_subscribe_params *params,
-                        const void *data, u16_t length){
+                        const void *data, u16_t length) {
     if (!data) {
         LOG_INF("[UNSUBSCRIBED]");
         params->value_handle = 0U;
@@ -276,13 +278,7 @@ static u8_t notify_func(struct bt_conn *conn,
     return BT_GATT_ITER_CONTINUE;
 }
 
-static struct bt_gatt_discover_params discover_params = {
-        .uuid = &auth_service_uuid.uuid,
-        .type = BT_GATT_DISCOVER_PRIMARY,
-        .func = &discover_func,
-        .start_handle = 0x0001,
-        .end_handle = 0xffff,
-};
+static struct bt_gatt_discover_params discover_params = {0};
 static struct bt_gatt_subscribe_params subscribe_params = {
         .value = BT_GATT_CCC_INDICATE,
         .flags = 0,
@@ -298,12 +294,6 @@ static u8_t discover_func(struct bt_conn *conn,
         LOG_INF("Discover complete");
         (void) memset(params, 0, sizeof(*params));
         int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
-        if (ret) {
-            LOG_INF("Kill connection: insufficient security %i", ret);
-            bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
-        } else {
-            LOG_INF("bt_conn_security successful");
-        }
         return BT_GATT_ITER_STOP;
     }
     LOG_INF("[ATTRIBUTE] handle %u", attr->handle);
@@ -394,79 +384,112 @@ static u8_t discover_func(struct bt_conn *conn,
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad) {
 
-    LOG_INF("Device found: [%02X:%02X:%02X:%02X:%02X:%02X] (RSSI %d) (TYPE %u) (BONDED %u)", addr->a.val[5],
-            addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1], addr->a.val[0], rssi, type,
+    if (default_conn) {
+        LOG_ERR("Already have a pending connection!");
+        return;
+    }
+    LOG_INF("Device found: [%02X:%02X:%02X:%02X:%02X:%02X] (RSSI %d) (TYPE %u) "
+            "(BONDED %u)",
+            addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
+            addr->a.val[1], addr->a.val[0], rssi, type,
             bt_addr_le_is_bonded(BT_ID_DEFAULT, addr));
 
     /* We're only interested in directed connectable events from bonded devices*/
-    if ((type != BT_LE_ADV_DIRECT_IND && type != BT_LE_ADV_IND) || !bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+    if ((type != BT_LE_ADV_DIRECT_IND && type != BT_LE_ADV_IND) ||
+        !bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
         return;
     }
 
     LOG_INF("Connecting to device...");
 
-    if (bt_le_scan_stop()) {
-        bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+    int err = bt_le_scan_stop();
+    if (err) {
+        LOG_ERR("Couldn't stop scanning: %i", err);
+        err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+        if (err) {
+            LOG_ERR("Scanning failed to start (err %d)", err);
+        }
+        return;
     }
-
-    bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
-
+    default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+    if (!default_conn) {
+        LOG_ERR("Couldn't connect: %i", err);
+        err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+        if (err) {
+            LOG_ERR("Scanning failed to start (err %d)", err);
+        }
+    }
+    LOG_INF("Now, the connected callback should be called...");
 }
 
 static void connected(struct bt_conn *conn, u8_t err) {
-    char addr[BT_ADDR_LE_STR_LEN];
 
-    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+    bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
     if (err) {
-        LOG_INF("Failed to connect to %s (%u)", log_strdup(addr), err);
+        LOG_INF("Failed to connect to [%02X:%02X:%02X:%02X:%02X:%02X] (%u)",
+                addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
+                addr->a.val[1], addr->a.val[0], err);
         int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
         if (error) {
             LOG_INF("Scanning failed to start (err %d)", error);
         }
         return;
     }
-    /*
+    if (conn != default_conn) {
+        LOG_ERR("New unhandled connection!");
+        return;
+    }
+
+
+    LOG_INF("Connected: [%02X:%02X:%02X:%02X:%02X:%02X]", addr->a.val[5],
+            addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1],
+            addr->a.val[0]);
+
     int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
     if (ret) {
         LOG_INF("Kill connection: insufficient security %i", ret);
         bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
     } else {
         LOG_INF("bt_conn_security successful");
-    }*/
+    }
 
     LOG_INF("Starting Discovery...");
+    discover_params.uuid = &auth_service_uuid.uuid;
+    discover_params.func = discover_func;
+    discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+    discover_params.start_handle = 0x0001;
+    discover_params.end_handle = 0xffff;
+
     err = bt_gatt_discover(conn, &discover_params);
     if (err) {
         LOG_INF("Discover failed(err %d)", err);
         return;
     }
-
 }
 
 static void disconnected(struct bt_conn *conn, u8_t reason) {
-    char addr[BT_ADDR_LE_STR_LEN];
+    const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
     int err;
+    if (conn != default_conn) {
+        LOG_ERR("Disconnected from unknown connection");
+        return;
+    }
+    LOG_INF("Disconnected: [%02X:%02X:%02X:%02X:%02X:%02X] (reason %u)",
+            addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
+            addr->a.val[1], addr->a.val[0], reason);
 
-    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+    if (default_conn) {
+        bt_conn_unref(default_conn);
+    }
 
-    LOG_INF("Disconnected: %s (reason %u)", log_strdup(addr), reason);
+    default_conn = NULL;
 
     err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
     if (err) {
         LOG_ERR("Scanning failed to start (err %d)", err);
     }
-}
-
-static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
-                              const bt_addr_le_t *identity) {
-    char addr_identity[BT_ADDR_LE_STR_LEN];
-    char addr_rpa[BT_ADDR_LE_STR_LEN];
-
-    bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-    bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
-
-    LOG_INF("Identity resolved %s -> %s", log_strdup(addr_rpa), log_strdup(addr_identity));
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level) {
@@ -480,7 +503,6 @@ static void security_changed(struct bt_conn *conn, bt_security_t level) {
 static struct bt_conn_cb conn_callbacks = {
         .connected = connected,
         .disconnected = disconnected,
-        .identity_resolved = identity_resolved,
         .security_changed = security_changed,
 };
 
