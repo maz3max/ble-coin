@@ -4,6 +4,3 @@
 [submodule "zephyr"]
 	path = zephyr
 	url = git@github.com:zephyrproject-rtos/zephyr.git
-[submodule "central/zephyr"]
-	path = central/zephyr
-	url = git@github.com:maz3max/zephyr.git
