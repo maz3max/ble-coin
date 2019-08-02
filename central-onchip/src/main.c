@@ -257,8 +257,43 @@ static uint16_t auth_response_chr_handle = 0;
 static uint16_t auth_response_chr_value_handle = 0;
 static uint16_t auth_response_chr_ccc_handle = 0;
 
-uint8_t challenge[16];
+uint8_t challenge[64] = {0};
 
+uint8_t response[32] = {0};
+
+static struct bt_gatt_read_params read_params;
+
+static u8_t read_func(struct bt_conn *conn, u8_t err,
+                      struct bt_gatt_read_params *params,
+                      const void *data, u16_t length) {
+    if (data) {
+        LOG_INF("Read complete: err %u length %u offset %u", err, length, params->single.offset);
+        LOG_HEXDUMP_INF(data, length, "Received data");
+        if (params->single.handle == auth_response_chr_value_handle) {
+            if (params->single.offset + length <= sizeof(response)) {
+                memcpy(response + params->single.offset, data, length);
+                if (params->single.offset + length == sizeof(response)) {
+                    if (spaceauth_validate(bt_conn_get_dst(conn), challenge, response) == 0) {
+                        LOG_INF("KEY AUTHENTICATED. OPEN DOOR PLEASE.");
+                    }
+                    memset(challenge, 0, sizeof(challenge));
+                    memset(response, 0, sizeof(response));
+                    bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+                    return BT_GATT_ITER_STOP;
+                }
+            }
+        }
+    }
+    return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_write_params write_params;
+
+static void write_func(struct bt_conn *conn, u8_t err,
+                       struct bt_gatt_write_params *params) {
+    LOG_INF("Write complete: err %u", err);
+    (void) memset(&write_params, 0, sizeof(write_params));
+}
 
 static u8_t discover_func(struct bt_conn *conn,
                           const struct bt_gatt_attr *attr,
@@ -274,7 +309,21 @@ static u8_t notify_func(struct bt_conn *conn,
     }
 
     LOG_INF("[NOTIFICATION] data %p length %u", data, length);
-
+    LOG_HEXDUMP_INF(data, length, "Received data");
+    if (length <= sizeof(response)) {
+        memcpy(response, data, length);
+        if (length < sizeof(response)) {
+            read_params.func = read_func;
+            read_params.handle_count = 1;
+            read_params.single.offset = 0;
+            read_params.single.handle = auth_response_chr_value_handle;
+            int err = bt_gatt_read(default_conn, &read_params);
+            if (err) {
+                LOG_ERR("Could not read response");
+                bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+            }
+        }
+    }
     return BT_GATT_ITER_CONTINUE;
 }
 
@@ -372,6 +421,19 @@ static u8_t discover_func(struct bt_conn *conn,
             bas_blvl_chr_val_handle = attr->handle + 1;
             LOG_INF("Discover complete");
             (void) memset(params, 0, sizeof(*params));
+
+            bt_rand(challenge, 64);
+
+            write_params.func = write_func;
+            write_params.handle = auth_challenge_chr_value_handle;
+            write_params.length = 64;
+            write_params.data = challenge;
+            write_params.offset = 0;
+            err = bt_gatt_write(conn, &write_params);
+            if (err) {
+                LOG_INF("Challenge write failed(err %d)", err);
+            }
+
         }
     }
     return BT_GATT_ITER_STOP;
