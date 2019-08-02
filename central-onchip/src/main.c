@@ -424,12 +424,16 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 
 static void connected(struct bt_conn *conn, u8_t err) {
 
-    bt_addr_le_t *addr = bt_conn_get_dst(conn);
+    const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
     if (err) {
         LOG_INF("Failed to connect to [%02X:%02X:%02X:%02X:%02X:%02X] (%u)",
                 addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
                 addr->a.val[1], addr->a.val[0], err);
+        if (conn == default_conn) {
+            bt_conn_unref(default_conn);
+            default_conn = NULL;
+        }
         int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
         if (error) {
             LOG_INF("Scanning failed to start (err %d)", error);
