@@ -249,6 +249,7 @@ static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
 
 static struct bt_uuid_16 bas_service_uuid = BT_UUID_INIT_16(0x180f);
 static struct bt_uuid_16 bas_blvl_uuid = BT_UUID_INIT_16(0x2a19);
+static struct bt_uuid_16 gatt_ccc_uuid = BT_UUID_INIT_16(0x2902);
 
 static uint16_t bas_svc_handle = 0;
 static uint16_t bas_blvl_chr_handle = 0;
@@ -328,7 +329,7 @@ static u8_t discover_func(struct bt_conn *conn,
 
             //next up: search response chr cccd
             discover_params.start_handle = attr->handle + 2;
-            discover_params.uuid = BT_UUID_GATT_CCC;
+            discover_params.uuid = &gatt_ccc_uuid.uuid;
             discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 
             err = bt_gatt_discover(default_conn, &discover_params);
