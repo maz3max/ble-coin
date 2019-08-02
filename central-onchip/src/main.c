@@ -111,18 +111,15 @@ static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
     }
     LOG_INF("valid space key");
 
-    //TODO register bt_keys and spacekey
     ret = spacekey_add(&keys.addr, spacekey);
     if (ret) {
         LOG_ERR("spacekey_add failed with %i", ret);
-        //TODO restart discovery
         return ret;
     }
     char key[BT_SETTINGS_KEY_MAX];
     bt_settings_encode_key(key, sizeof(key), "keys", &keys.addr, NULL);
     bt_keys_store(&keys);
     settings_load_subtree(key);
-    //TODO restart discovery
     return 0;
 }
 
@@ -141,7 +138,6 @@ static int cmd_coin_del(const struct shell *shell, size_t argc, char **argv) {
     bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
     shell_print(shell, "parsed BLE addr [%s]", addr_str);
 
-    //TODO unpair bt_keys and spacekey
     ret = bt_unpair(BT_ID_DEFAULT, &addr);
     if (ret) {
         LOG_ERR("could not unpair this address (err %d)", ret);
@@ -325,7 +321,7 @@ static u8_t discover_func(struct bt_conn *conn,
             LOG_INF("found auth response chr handle");
             auth_response_chr_handle = attr->handle;
             auth_response_chr_value_handle = attr->handle + 1;
-            subscribe_params.value_handle = attr->handle + 1; // TODO
+            subscribe_params.value_handle = attr->handle + 1;
 
             //next up: search response chr cccd
             discover_params.start_handle = attr->handle + 2;
