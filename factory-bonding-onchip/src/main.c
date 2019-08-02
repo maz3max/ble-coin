@@ -47,7 +47,7 @@ void main(void) {
   settings_save_one("bt/id", &periph_addr, sizeof(periph_addr));
   printk("Saving IRK\n");
   settings_save_one("bt/irk", periph_irk.val, 16);
-  printk("Saving KEYS\n");
+  printk("Saving KEYS (BT_KEYS_STORAGE_LEN=%u)\n", BT_KEYS_STORAGE_LEN);
   bt_keys_store(&periph_keys);
   printk("Saving SpaceKey\n");
   settings_save_one("space/key", &spacekey, sizeof(spacekey));
