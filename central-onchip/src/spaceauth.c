@@ -32,7 +32,6 @@ void spacekeys_print(const struct shell *shell) {
 }
 
 static void space_settings_encode_key(char *path, size_t path_size, const bt_addr_le_t *addr) {
-    assert(path_size > 19)
     snprintk(path, path_size, "space/%02x%02x%02x%02x%02x%02x%u",
              addr->a.val[5], addr->a.val[4], addr->a.val[3],
              addr->a.val[2], addr->a.val[1], addr->a.val[0],
@@ -157,9 +156,14 @@ int spaceauth_validate(const bt_addr_le_t *addr, const uint8_t *challenge, const
     }
     uint8_t correct_response[BLAKE2S_OUTBYTES];
     blake2s(correct_response, BLAKE2S_OUTBYTES, challenge, BLAKE2S_BLOCKBYTES, slot->key, BLAKE2S_KEYBYTES);
-    if (!_compare(response, correct_response, BLAKE2S_BLOCKBYTES)) {
+    if (!_compare(response, correct_response, BLAKE2S_OUTBYTES)) {
+        LOG_HEXDUMP_INF(challenge, BLAKE2S_BLOCKBYTES, "challenge");
+        LOG_HEXDUMP_INF(response, BLAKE2S_OUTBYTES, "response");
         return 0;
     } else {
+        LOG_ERR("response does not match!");
+        LOG_HEXDUMP_ERR(response, BLAKE2S_OUTBYTES, "is");
+        LOG_HEXDUMP_ERR(correct_response, BLAKE2S_OUTBYTES, "should be");
         return -EINVAL;
     }
 }
