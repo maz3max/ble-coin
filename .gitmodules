@@ -3,4 +3,4 @@
 	url = git@github.com:BLAKE2/BLAKE2.git
 [submodule "zephyr"]
 	path = zephyr
-	url = git@github.com:zephyrproject-rtos/zephyr.git
+	url = git@github.com:cvinayak/zephyr.git
