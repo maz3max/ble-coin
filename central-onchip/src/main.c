@@ -1,9 +1,6 @@
 #include <zephyr.h>
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 #include <logging/log.h>
-#include <stdlib.h>
-#include <ctype.h>
 
 LOG_MODULE_REGISTER(app);
 
@@ -20,53 +17,9 @@ LOG_MODULE_REGISTER(app);
 #include <bluetooth/gatt.h>
 
 #include "spaceauth.h"
+#include "helper.h"
 
 static struct bt_conn *default_conn;
-
-static int parse_addr(const char *addr, bt_addr_le_t *result) {
-    if (strlen(addr) != 17) {
-        LOG_ERR("wrong address length");
-        return -EINVAL;
-    } else {
-        for (size_t i = 2; i < 15; i += 3) {
-            if (addr[i] != ':') {
-                LOG_ERR("invalid address");
-                return -EINVAL;
-            }
-        }
-        for (size_t i = 0; i < 6; ++i) {
-            size_t off = 3 * i;
-            char buf[3] = {addr[off], addr[off + 1], 0};
-            if (isxdigit(buf[0]) && isxdigit(buf[1])) {
-                result->a.val[5 - i] = strtol(buf, NULL, 16);
-            } else {
-                LOG_ERR("invalid address");
-                return -EINVAL;
-            }
-        }
-    }
-    result->type = BT_ADDR_LE_RANDOM;
-
-    return 0;
-}
-
-static int parse_hex(const char *str, const size_t n, uint8_t *out) {
-    if (strlen(str) != 2 * n) {
-        LOG_ERR("wrong hex string length");
-        return -EINVAL;
-    }
-    for (size_t i = 0; i < n; ++i) {
-        char buf[] = {str[2 * i], str[2 * i + 1], 0};
-        if (isxdigit(buf[0]) && isxdigit(buf[1])) {
-            out[i] = strtol(buf, NULL, 16);
-        } else {
-            LOG_ERR("invalid hex string");
-            return -EINVAL;
-        }
-    }
-    LOG_HEXDUMP_INF(out, n, "parsed data");
-    return 0;
-}
 
 static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
     shell_print(shell, "argc = %d", argc);
@@ -146,7 +99,6 @@ static int cmd_coin_del(const struct shell *shell, size_t argc, char **argv) {
 
     return 0;
 }
-
 /* Creating subcommands (level 1 command) array for command "coin". */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_coin,
                                SHELL_CMD(add, NULL, "usage: coin add <addr> <irk> <ltk> <spacekey>",
