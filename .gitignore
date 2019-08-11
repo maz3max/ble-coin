@@ -1,2 +1,8 @@
 prod/
 peripheral_sc_only/
+
+modules/
+
+tools/
+
+\.west/
