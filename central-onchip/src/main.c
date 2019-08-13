@@ -113,7 +113,7 @@ static int cmd_print_spacekeys(const struct shell *shell, size_t argc, char **ar
     spacekeys_print(shell);
 }
 
-static void print_key(struct bt_keys *keys, void *data) {
+static void print_bond_func(struct bt_keys *keys, void *data) {
     const struct shell *shell = data;
     shell_print(shell, "[%02X:%02X:%02X:%02X:%02X:%02X] keys: %u, flags: %u", keys->addr.a.val[5], keys->addr.a.val[4],
                 keys->addr.a.val[3], keys->addr.a.val[2], keys->addr.a.val[1], keys->addr.a.val[0], keys->keys,
@@ -122,7 +122,7 @@ static void print_key(struct bt_keys *keys, void *data) {
 
 static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) {
     shell_print(shell, "printing all bonds...");
-    bt_keys_foreach(BT_KEYS_ALL, print_key, shell);
+    bt_keys_foreach(BT_KEYS_ALL, print_bond_func, shell);
 }
 
 static int cmd_load_settings(const struct shell *shell, size_t argc, char **argv) {
