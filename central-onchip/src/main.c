@@ -125,21 +125,18 @@ static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) 
     bt_keys_foreach(BT_KEYS_ALL, print_bond_func, shell);
 }
 
-static int cmd_load_settings(const struct shell *shell, size_t argc, char **argv) {
+static int cmd_settings_load(const struct shell *shell, size_t argc, char **argv) {
     settings_load();
 }
 
-static int cmd_delete_settings(const struct shell *shell, size_t argc, char **argv) {
-    settings_delete(argv[0]);
-}
-
-static int cmd_clear_all_settings(const struct shell *shell, size_t argc, char **argv) {
+static int cmd_settings_clear(const struct shell *shell, size_t argc, char **argv) {
     const struct flash_area *fap;
     flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
     int rc = flash_area_erase(fap, 0, fap->fa_size);
     if (rc != 0) {
         LOG_ERR("cannot get flash area");
     }
+    shell_error(shell, "Storage cleared, please reboot. No, loading does not suffice.");
 }
 
 static int cmd_reboot(const struct shell *shell, size_t argc, char **argv) {
@@ -156,10 +153,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_stats,
 /* Creating root (level 0) command "coin" */
 SHELL_CMD_REGISTER(stats, &sub_stats, "commands to print internal state", NULL);
 
-SHELL_CMD_REGISTER(load_settings, NULL, "loads settings", cmd_load_settings);
-SHELL_CMD_REGISTER(del_settings, NULL, "deletes setting", cmd_delete_settings);
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_settings,
+                               SHELL_CMD(load, NULL, "load all settings from storage", cmd_settings_load),
+                               SHELL_CMD(clear, NULL, "clear storage (needs reboot)", cmd_settings_clear),
+                               SHELL_SUBCMD_SET_END
+);
+SHELL_CMD_REGISTER(settings, &sub_settings, "commands to manage settings", NULL);
+
 SHELL_CMD_REGISTER(reboot, NULL, "perform cold system reboot", cmd_reboot);
-SHELL_CMD_REGISTER(del_all_settings, NULL, "deletes all settings", cmd_clear_all_settings);
 
 
 static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv) {
