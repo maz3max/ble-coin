@@ -21,7 +21,6 @@ static const bt_addr_t NO_ADDR = {0};
 static size_t largest_index_used = 0;
 
 void spacekeys_print(const struct shell *shell) {
-    shell_print(shell, "printing all spacekeys...");
     for (size_t i = 0; i <= largest_index_used; ++i) {
         if (bt_addr_cmp(&NO_ADDR, &keys[i].addr.a) != 0) {
             shell_print(shell, "[%02X:%02X:%02X:%02X:%02X:%02X] : %02X...", keys[i].addr.a.val[5],
@@ -104,7 +103,7 @@ static int space_settings_set(const char *key, size_t len_rd,
                 return (len < 0) ? len : -EINVAL;
             }
             memcpy(&slot->addr, &addr, sizeof(bt_addr_le_t));
-            LOG_INF("loaded new spaceauth key");
+            LOG_DBG("loaded new spaceauth key");
             return 0;
         } else {
             return -EINVAL;
@@ -157,19 +156,19 @@ int spaceauth_validate(const bt_addr_le_t *addr, const uint8_t *challenge, const
     uint8_t correct_response[BLAKE2S_OUTBYTES];
     blake2s(correct_response, BLAKE2S_OUTBYTES, challenge, BLAKE2S_BLOCKBYTES, slot->key, BLAKE2S_KEYBYTES);
     if (!_compare(response, correct_response, BLAKE2S_OUTBYTES)) {
-        LOG_HEXDUMP_INF(challenge, BLAKE2S_BLOCKBYTES, "challenge");
-        LOG_HEXDUMP_INF(response, BLAKE2S_OUTBYTES, "response");
+        LOG_HEXDUMP_DBG(challenge, BLAKE2S_BLOCKBYTES, "challenge");
+        LOG_HEXDUMP_DBG(response, BLAKE2S_OUTBYTES, "response");
         return 0;
     } else {
         LOG_ERR("response does not match!");
-        LOG_HEXDUMP_ERR(response, BLAKE2S_OUTBYTES, "is");
-        LOG_HEXDUMP_ERR(correct_response, BLAKE2S_OUTBYTES, "should be");
+        LOG_HEXDUMP_DBG(response, BLAKE2S_OUTBYTES, "is");
+        LOG_HEXDUMP_DBG(correct_response, BLAKE2S_OUTBYTES, "should be");
         return -EINVAL;
     }
 }
 
 void spaceauth_init() {
-    LOG_INF("initialize spaceauth");
+    LOG_DBG("initialize spaceauth");
     int err;
 
     err = settings_subsys_init();

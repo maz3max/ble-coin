@@ -48,6 +48,6 @@ int parse_hex(const char *str, size_t n, uint8_t *out) {
             return -EINVAL;
         }
     }
-    LOG_HEXDUMP_INF(out, n, "parsed data");
+    LOG_HEXDUMP_DBG(out, n, "parsed data");
     return 0;
 }
