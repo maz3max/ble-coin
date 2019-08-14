@@ -89,6 +89,10 @@ static struct bt_conn_cb conn_callbacks = {
         .security_changed = security_changed_cb,
 };
 
+#define BT_LE_CONN_PARAM_LOW_TIMEOUT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
+						  BT_GAP_INIT_CONN_INT_MAX, \
+						  0, 100)
+
 /**
  * command to start up the BLE stack
  * @param shell shell issuing command
@@ -172,7 +176,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
         }
         return;
     }
-    default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
+    default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_LOW_TIMEOUT);
     if (!default_conn) {
         LOG_ERR("Couldn't connect: %i", err);
         err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
