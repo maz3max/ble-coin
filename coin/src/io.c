@@ -54,7 +54,7 @@ static void blink_expiry_function(struct k_timer *timer_id) {
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb, u32_t pins) {
-    LOG_INF("button pressed");
+    //LOG_INF("button pressed");
 }
 
 void io_init() {
@@ -70,5 +70,5 @@ void io_init() {
     gpio_pin_enable_callback(dev, BTN);
 
     k_timer_init(&blink_timer, blink_expiry_function, NULL);
-    set_blink_intensity(BI_ON);
+    set_blink_intensity(BI_AGGRESSIVE);
 }
