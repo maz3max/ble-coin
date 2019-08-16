@@ -6,8 +6,9 @@ extern "C" {
 /**
  * Initialize Battery Service.
  * This implementation directly uses the ADC with the on-board resistor divider to measure battery level.
+ * @return initially measured battery level
  */
-void bas_init();
+uint8_t bas_init();
 
 #ifdef __cplusplus
 }

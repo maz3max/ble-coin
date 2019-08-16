@@ -42,8 +42,13 @@ static void connect_bonded(const struct bt_bond_info *info, void *user_data) {
     }
 }
 
+static uint8_t batt_adv_bytes[] = {0x0f, 0x18, /* batt level UUID */
+                                   0x00};
+
 static const struct bt_data ad[] = {
         BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+        BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x00, 0x18, 0x01, 0x18, 0x0f, 0x18),
+        BT_DATA(BT_DATA_SVC_DATA16, batt_adv_bytes, sizeof(batt_adv_bytes))
 };
 
 static void bt_ready(int err) {
@@ -110,7 +115,7 @@ void main(void) {
     k_delayed_work_submit(&shutdown_timer, K_SECONDS(30));*/
     // initialize own parts
     io_init();
-    bas_init();
+    batt_adv_bytes[2] = bas_init();
     space_auth_init();
 
     LOG_INF("turning BLE on");
