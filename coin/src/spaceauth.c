@@ -31,7 +31,7 @@ static uint8_t response[BLAKE2S_OUTBYTES] = {0};
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                         u8_t err) {
     if (err != 0U) {
-        LOG_INF("indication fail: %i", err);
+        LOG_ERR("indication fail: %i", err);
     } else {
         LOG_INF("indication success");
     }
@@ -54,7 +54,6 @@ static ssize_t read_response(struct bt_conn *conn,
                              BLAKE2S_OUTBYTES);
 }
 
-//TODO: reactivate security measures
 BT_GATT_SERVICE_DEFINE(auth_svc,
                        BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
                        BT_GATT_CHARACTERISTIC(&auth_challenge_uuid.uuid, BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH,
