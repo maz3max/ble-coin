@@ -89,6 +89,16 @@ static struct bt_conn_cb conn_callbacks = {
         .security_changed = security_changed_cb,
 };
 
+static struct k_delayed_work timeout_timer;
+
+// timeout function to kill connections that take too long
+static void timeout(struct k_work *work) {
+    LOG_ERR("TIMEOUT REACHED");
+    if (default_conn) {
+        bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    }
+}
+
 #define BT_LE_CONN_PARAM_LOW_TIMEOUT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
                           BT_GAP_INIT_CONN_INT_MAX, \
                           0, 100)
@@ -219,6 +229,9 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
         return;
     }
 
+    // set up timeout
+    k_delayed_work_init(&timeout_timer, timeout);
+    k_delayed_work_submit(&timeout_timer, K_SECONDS(5));
 
     LOG_INF("Connected: [%02X:%02X:%02X:%02X:%02X:%02X]", addr->a.val[5],
             addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1],
@@ -488,6 +501,8 @@ static void disconnected_cb(struct bt_conn *conn, u8_t reason) {
     LOG_INF("Disconnected: [%02X:%02X:%02X:%02X:%02X:%02X] (reason %u)",
             addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
             addr->a.val[1], addr->a.val[0], reason);
+
+    k_delayed_work_cancel(&timeout_timer);
 
     if (default_conn) {
         bt_conn_unref(default_conn);
