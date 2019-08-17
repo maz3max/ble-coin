@@ -70,5 +70,5 @@ void io_init() {
     gpio_pin_enable_callback(dev, BTN);
 
     k_timer_init(&blink_timer, blink_expiry_function, NULL);
-    set_blink_intensity(BI_AGGRESSIVE);
+    set_blink_intensity(BI_ON);
 }

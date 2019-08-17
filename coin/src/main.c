@@ -94,6 +94,8 @@ static void connected(struct bt_conn *conn, u8_t err) {
             LOG_INF("Kill connection: insufficient security");
             bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
         }*/
+
+        set_blink_intensity(BI_AGGRESSIVE);
     }
 }
 
@@ -128,7 +130,7 @@ static struct k_delayed_work shutdown_timer;
  * @param work
  */
 static void shutdown(struct k_work *work) {
-    if(default_conn){
+    if (default_conn) {
         bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     } else {
         disconnected(NULL, 0);
@@ -138,10 +140,8 @@ static void shutdown(struct k_work *work) {
 void main(void) {
 
     // set shutdown timer
-    //TODO: reactivate battery saving measures
-    /*
     k_delayed_work_init(&shutdown_timer, shutdown);
-    k_delayed_work_submit(&shutdown_timer, K_SECONDS(30));*/
+    k_delayed_work_submit(&shutdown_timer, K_SECONDS(10));
     // initialize own parts
     io_init();
     batt_adv_bytes[2] = bas_init();
