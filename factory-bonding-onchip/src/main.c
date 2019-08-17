@@ -1,19 +1,7 @@
-#include <adc.h>
-#include <device.h>
-#include <gpio.h>
-#include <power.h>
-#include <soc.h>
 #include <zephyr.h>
-
 #include <settings/settings.h>
-
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/crypto.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/uuid.h>
-#include <keys.h>
+#include <keys.h> // use of internal BLE keys API
 
 #include "main.h"
 
