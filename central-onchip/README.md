@@ -20,7 +20,7 @@ In addition to that, there are some complementary commands:
 After setup (central and peripheral data is saved automatically to storage), you can start the central using `ble_start`.
 
 Output of a successful authentication could look like this:
-```
+```cpp
 [00:00:24.987,884] <inf> app: Device found: [d9:b7:fd:4b:c3:54] (RSSI -46) (TYPE 0) (BONDED 1)
 [00:00:24.987,915] <inf> app: Battery Level: 39%
 [00:00:25.200,714] <inf> app: Connected: [d9:b7:fd:4b:c3:54]
@@ -37,5 +37,5 @@ The code is structured in 3 parts:
 * `main`: contains connection management, GATT service discovery, the app statemachine and the `ble_start` command
 
 ## App Statemachine
-![](https://i.imgur.com/q89P4oH.png)
+![](https://i.imgur.com/IQAX2zw.png)
 
