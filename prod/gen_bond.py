@@ -5,25 +5,30 @@ import fcntl
 import os
 import binascii
 
+# regex to parse address and IRK
 id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
 
 
+# generate C-Style definition of a byte string
 def byte_str_to_c_def(s):
     hex_arr = ["0x%02x" % b for b in s]
     return "{ " + ", ".join(hex_arr) + " }"
 
 
-def addr_to_str(addr, addr_type="random"):
+# generate human-readable colon-separated BLE address string
+def addr_to_str(addr):
     hex_arr = ["%02X" % b for b in addr[::-1]]
     return ":".join(hex_arr)
 
 
+# generate C-Style definition of an BLE address struct (zephyr-specific)
 def addr_to_c_def(addr, addr_type="random"):
     t = "BT_ADDR_LE_RANDOM" if addr_type == "random" else "BT_ADDR_LE_PUBLIC"
     a_str = byte_str_to_c_def(addr)
     return "{ .type = %s, .a = %s }" % (t, a_str)
 
 
+# generate a full coin line for coins.txt containing address, IRK, LTK and SPACEKEY
 def coin_line(periph_addr, periph_irk, ltk, spacekey):
     return "%s %s %s %s\n" % (
         addr_to_str(periph_addr), periph_irk.hex().upper(),  # ID of coin
@@ -31,6 +36,7 @@ def coin_line(periph_addr, periph_irk, ltk, spacekey):
         spacekey.hex().upper())  # spacekey
 
 
+# generate contents of main.h including all config data for a coin
 def periph_defines(periph_addr, periph_irk, central_addr, central_irk, ltk,
                    spacekey):
     string = "#define INSERT_CENTRAL_ADDR_HERE %s\n" % addr_to_c_def(central_addr)
@@ -42,6 +48,7 @@ def periph_defines(periph_addr, periph_irk, central_addr, central_irk, ltk,
     return string
 
 
+# parses a line of either the central.txt or coins.txt and extracts BLE address, address type and IRK
 def parse_id_line(line):
     m = re.search(id_regex, line)
     if m:
@@ -56,6 +63,7 @@ def parse_id_line(line):
         raise ValueError("Could not parse line")
 
 
+# reads existing ids from coins.txt into a list
 def read_ids(path="coins.txt"):
     result = []
     if not os.path.exists(path):
@@ -68,12 +76,14 @@ def read_ids(path="coins.txt"):
     return result
 
 
+# appends a coin line to coins.txt (using flock for exclusive access)
 def append_id(line, path="coins.txt"):
     with open(path, "a") as f:
         fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
         f.write(line)
 
 
+# reads central address and IRK if central.txt exists, otherwise initializes it
 def gen_central(path="central.txt"):
     if os.path.exists(path):
         with open(path, "r") as f:
@@ -89,6 +99,7 @@ def gen_central(path="central.txt"):
         return central_addr, "random", central_irk
 
 
+# generates new coin info making sure it has a unique address
 def gen_peripheral(addr_list):
     peripheral_addr = bytearray(secrets.token_bytes(6))
     peripheral_addr[5] |= 0xc0
@@ -106,7 +117,7 @@ if __name__ == '__main__':
     p_addr, p_irk = gen_peripheral(read_ids())
     c_addr, c_addr_type, c_irk = gen_central()
 
-    print("Central: " + addr_to_str(c_addr, c_addr_type))
+    print("Central: " + addr_to_str(c_addr))
     print("Peripheral: " + addr_to_str(p_addr))
 
     # prepare keys
