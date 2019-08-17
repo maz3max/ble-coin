@@ -60,6 +60,7 @@ static void bt_ready(int err) {
     settings_load();
 
     bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+    // bt_foreach_bond(BT_ID_DEFAULT,connect_bonded, NULL);
 }
 
 static void connected(struct bt_conn *conn, u8_t err) {
