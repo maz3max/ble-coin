@@ -33,22 +33,6 @@ void sys_pm_notify_power_state_entry(enum power_states state) {
 
 struct bt_conn *default_conn = NULL;
 
-/**
- * helper function to connect to a given bonded device
- * used with bt_foreach_bond
- * @param info bond info
- * @param user_data not used
- */
-static void connect_bonded(const struct bt_bond_info *info, void *user_data) {
-    if (default_conn) {
-        bt_conn_unref(default_conn);
-    }
-    default_conn = bt_conn_create_slave_le(&info->addr, BT_LE_ADV_CONN);
-    if (!default_conn) {
-        LOG_ERR("error advertising");
-    }
-}
-
 static uint8_t batt_adv_bytes[] = {0x0f, 0x18, /* batt level UUID */
                                    0x00}; /* actual batt level */
 // advertising data

@@ -23,7 +23,7 @@ static struct device *adc_dev = NULL;
 #define ADC_1ST_CHANNEL_INPUT NRF_SAADC_INPUT_AIN0
 
 #define BAT_LOW 3
-#define BAT_PORT LED0_GPIO_CONTROLLER
+#define BAT_PORT DT_ALIAS_LED0_GPIOS_CONTROLLER
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
         .gain = ADC_GAIN,

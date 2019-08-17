@@ -5,9 +5,9 @@
 
 LOG_MODULE_REGISTER(io);
 
-#define LED_PORT LED0_GPIO_CONTROLLER
-#define LED LED0_GPIO_PIN
-#define BTN SW0_GPIO_PIN
+#define LED_PORT DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define LED DT_ALIAS_LED0_GPIOS_PIN
+#define BTN DT_ALIAS_SW0_GPIOS_PIN
 
 static struct gpio_callback btn_cb = {0};
 
