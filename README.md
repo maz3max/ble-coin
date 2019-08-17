@@ -65,4 +65,4 @@ Both peripherals and the central kill the connection after a short timeout (5s).
     * For the NRF52840 dongle, you can use [nRF Connect for Desktop](https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Connect-for-desktop)
     * For the coins, you have to use a Serial-Wire-Debug Programmer, but a [cheap 2€ STLinkV2 clone](https://de.aliexpress.com/item/32792513237.html) will do just fine using [OpenOCD](http://openocd.org/)
 * Can I use this project for my own purposes?
-    * **Suit yourself, but I cannot give you any warranty for safety, security, functionality, merchantability or anything else.**
+    * See LICENSE.md
