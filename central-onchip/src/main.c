@@ -99,6 +99,20 @@ static void timeout(struct k_work *work) {
     }
 }
 
+// helper function for advertisement data parser
+bool ad_parse_func(struct bt_data *data, void *user_data) {
+    int16_t *batt = user_data;
+    if (data->type == BT_DATA_SVC_DATA16) {
+        // check if this is service data for this battery service (uuid = 0x180f)
+        if (data->data_len != 3 || data->data[0] != 0x0f || data->data[1] != 0x18) {
+            return true;
+        }
+        *batt = data->data[2];
+        return false; // stop parsing, found what we wanted
+    }
+    return true;
+}
+
 #define BT_LE_CONN_PARAM_LOW_TIMEOUT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
                           BT_GAP_INIT_CONN_INT_MAX, \
                           0, 100)
@@ -174,6 +188,13 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
     if ((type != BT_LE_ADV_DIRECT_IND && type != BT_LE_ADV_IND) ||
         !bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
         return;
+    }
+
+    // read battery level from advertising data if available
+    int8_t blvl = -1;
+    bt_data_parse(ad, ad_parse_func, &blvl);
+    if (blvl >= 0) {
+        LOG_INF("Battery Level: %i%%", blvl);
     }
 
     LOG_DBG("Connecting to device...");
