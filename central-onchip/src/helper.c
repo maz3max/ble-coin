@@ -68,6 +68,7 @@ int parse_hex(const char *str, size_t n, uint8_t *out) {
 static int cmd_settings_load(const struct shell *shell, size_t argc, char **argv) {
     settings_load();
     shell_info(shell, "done");
+    return 0;
 }
 
 /**
@@ -81,6 +82,7 @@ static int cmd_settings_clear(const struct shell *shell, size_t argc, char **arg
         shell_error(shell, "cannot get flash area");
     }
     shell_info(shell, "Storage cleared, please reboot. No, loading does not suffice.");
+    return 0;
 }
 
 /**
@@ -88,6 +90,7 @@ static int cmd_settings_clear(const struct shell *shell, size_t argc, char **arg
  */
 static int cmd_reboot(const struct shell *shell, size_t argc, char **argv) {
     sys_reboot(SYS_REBOOT_COLD);
+    return 0; // just to make compiler happy
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_settings,
@@ -202,6 +205,7 @@ SHELL_CMD_REGISTER(coin, &sub_coin, "commands to manage coins", NULL);
 static int cmd_print_spacekeys(const struct shell *shell, size_t argc, char **argv) {
     spacekeys_print(shell);
     shell_info(shell, "done");
+    return 0;
 }
 
 // helper function for cmd_print_bonds
@@ -216,8 +220,9 @@ static void print_bond_func(struct bt_keys *keys, void *data) {
  * command to print all registered BLE bonds
  */
 static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) {
-    bt_keys_foreach(BT_KEYS_ALL, print_bond_func, shell);
+    bt_keys_foreach(BT_KEYS_ALL, print_bond_func, (void *) shell);
     shell_info(shell, "done");
+    return 0;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_stats,
@@ -250,6 +255,7 @@ static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv
     settings_load_subtree("bt/irk");
     settings_load_subtree("bt/id");
     shell_info(shell, "done");
+    return 0;
 }
 
 SHELL_CMD_REGISTER(central_setup, NULL, "usage: central_setup <addr> <irk>", cmd_central_setup);

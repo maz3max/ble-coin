@@ -90,8 +90,8 @@ static struct bt_conn_cb conn_callbacks = {
 };
 
 #define BT_LE_CONN_PARAM_LOW_TIMEOUT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
-						  BT_GAP_INIT_CONN_INT_MAX, \
-						  0, 100)
+                          BT_GAP_INIT_CONN_INT_MAX, \
+                          0, 100)
 
 /**
  * command to start up the BLE stack
@@ -107,6 +107,7 @@ static int cmd_ble_start(const struct shell *shell, size_t argc, char **argv) {
     bt_conn_cb_register(&conn_callbacks);
     bt_conn_auth_cb_register(NULL);
     LOG_INF("Bluetooth initialized");
+    return 0;
 }
 
 SHELL_CMD_REGISTER(ble_start, NULL, "start ble", cmd_ble_start);

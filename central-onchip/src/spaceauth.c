@@ -85,7 +85,7 @@ static int space_settings_set(const char *key, size_t len_rd,
                               settings_read_cb read_cb, void *cb_arg) {
     const char *next;
 
-    int key_len = settings_name_next(key, &next);
+    settings_name_next(key, &next);
     if (!next) {
         bt_addr_le_t addr;
         if (!space_settings_decode_key(key, &addr)) {
