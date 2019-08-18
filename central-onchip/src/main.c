@@ -25,14 +25,9 @@ static struct bt_uuid_128 auth_challenge_uuid = BT_UUID_INIT_128(
 static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
         0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95,
         0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f);
-static struct bt_uuid_16 bas_service_uuid = BT_UUID_INIT_16(0x180f);
-static struct bt_uuid_16 bas_blvl_uuid = BT_UUID_INIT_16(0x2a19);
 static struct bt_uuid_16 gatt_ccc_uuid = BT_UUID_INIT_16(0x2902);
 
 // save slots for discovered GATT handles
-static uint16_t bas_svc_handle = 0;
-static uint16_t bas_blvl_chr_handle = 0;
-static uint16_t bas_blvl_chr_val_handle = 0;
 static uint16_t auth_svc_handle = 0;
 static uint16_t auth_challenge_chr_handle = 0;
 static uint16_t auth_challenge_chr_value_handle = 0;
@@ -365,34 +360,6 @@ static u8_t discover_func(struct bt_conn *conn,
                 LOG_DBG("[SUBSCRIBED]");
             }
 
-            //next up: search bas svc
-            discover_params.uuid = &bas_service_uuid.uuid;
-            discover_params.start_handle = 0x0001;
-            discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-
-            err = bt_gatt_discover(default_conn, &discover_params);
-            if (err) {
-                LOG_ERR("bas svc discovery failed (err %d)", err);
-                bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-            }
-        } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS)) {
-            LOG_DBG("found bas svc handle %u", attr->handle);
-            bas_svc_handle = attr->handle;
-
-            //next up: search bas blvl chr
-            discover_params.start_handle = attr->handle + 1;
-            discover_params.uuid = &bas_blvl_uuid.uuid;
-            discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
-
-            err = bt_gatt_discover(default_conn, &discover_params);
-            if (err) {
-                LOG_ERR("bas blvl chr discovery failed (err %d)", err);
-                bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-            }
-        } else if (!bt_uuid_cmp(params->uuid, BT_UUID_BAS_BATTERY_LEVEL)) {
-            LOG_DBG("found bas blvl chr handle %u", attr->handle);
-            bas_blvl_chr_handle = attr->handle;
-            bas_blvl_chr_val_handle = attr->handle + 1;
             LOG_INF("Discover complete");
             (void) memset(params, 0, sizeof(*params));
 
