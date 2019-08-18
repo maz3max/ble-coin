@@ -41,15 +41,15 @@
 };
 
 &adc {
-	status ="ok";
+	status ="okay";
 };
 
 &gpiote {
-	status ="ok";
+	status ="okay";
 };
 
 &gpio0 {
-	status ="ok";
+	status ="okay";
 };
 
 &flash0 {
