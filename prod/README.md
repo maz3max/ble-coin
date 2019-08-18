@@ -15,3 +15,6 @@ It is initialized and used by `gen_bond.py`, so please do not edit it.
 
 ## coins.txt
 This file contains address and key data for every coin, one line per coin. It is automagically filled when calling `gen_bond.py`.
+
+## UICR_APPROTECT_clear.hex
+Flashing this file activates the readback protection of the NRF52832 chip. It also deactivates the debugging interface, but the chip can be recovered by issuing a mass-erase.

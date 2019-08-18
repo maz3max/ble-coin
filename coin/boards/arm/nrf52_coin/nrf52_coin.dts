@@ -57,14 +57,6 @@
 	status ="ok";
 };
 
-&uart0 {
-	compatible = "nordic,nrf-uart";
-	current-speed = <115200>;
-	status = "ok";
-	tx-pin = <6>;
-	rx-pin = <8>;
-};
-
 &flash0 {
 	/*
 	 * For more information, see:
