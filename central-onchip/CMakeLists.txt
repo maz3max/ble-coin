@@ -14,4 +14,4 @@ zephyr_include_directories(
 )
 
 
-target_sources(app PRIVATE src/main.c src/helper.c src/spaceauth.c ../BLAKE2/ref/blake2s-ref.c)
+target_sources(app PRIVATE src/main.c src/leds.c src/helper.c src/spaceauth.c ../BLAKE2/ref/blake2s-ref.c)

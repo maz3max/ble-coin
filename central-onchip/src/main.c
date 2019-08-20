@@ -10,6 +10,7 @@
 // own includes
 #include "spaceauth.h"
 #include "helper.h"
+#include "leds.h"
 
 LOG_MODULE_REGISTER(app);
 
@@ -223,6 +224,8 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
  * @param err possible error code when establishing connection
  */
 static void connected_cb(struct bt_conn *conn, u8_t err) {
+    led0_set(0);
+    led1_set(1, 0, 0);
 
     const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
@@ -460,6 +463,8 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
                 if (params->single.offset + length == sizeof(response)) {
                     if (spaceauth_validate(bt_conn_get_dst(conn), challenge, response) == 0) {
                         LOG_INF("KEY AUTHENTICATED. OPEN DOOR PLEASE.");
+                        led0_set(1);
+                        led1_set(1, 1, 1);
                     }
                     memset(challenge, 0, sizeof(challenge));
                     memset(response, 0, sizeof(response));
@@ -479,6 +484,9 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
  * @param reason reason to kill connection
  */
 static void disconnected_cb(struct bt_conn *conn, u8_t reason) {
+    led0_set(0);
+    led1_set(0, 0, 0);
+
     const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
     int err;
@@ -506,4 +514,5 @@ static void disconnected_cb(struct bt_conn *conn, u8_t reason) {
 
 void main(void) {
     spaceauth_init();
+    leds_init();
 }
