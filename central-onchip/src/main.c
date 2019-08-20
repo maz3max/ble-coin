@@ -224,9 +224,6 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
  * @param err possible error code when establishing connection
  */
 static void connected_cb(struct bt_conn *conn, u8_t err) {
-    led0_set(0);
-    led1_set(1, 0, 0);
-
     const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
     if (err) {
@@ -247,6 +244,8 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
         LOG_ERR("New unhandled connection!");
         return;
     }
+    led0_set(0);
+    led1_set(1, 0, 0);
 
     // set up timeout
     k_delayed_work_init(&timeout_timer, timeout);
