@@ -13,5 +13,10 @@ all: $(HEXFILES)
 
 .PHONY: clean
 clean:
-	@rm -f ../prod/*.hex
+	@find *.hex -not -name 'UICR_APPROTECT_clear.hex' -delete
+	$(foreach sub, $(patsubst %/Makefile, %, $(SUBDIRS)), rm -f $(sub)/zephyr/zephyr.*;)
+
+.PHONY: squeaky-clean
+squeaky-clean:
+	@find *.hex -not -name 'UICR_APPROTECT_clear.hex' -delete
 	$(foreach sub, $(patsubst %/Makefile, %, $(SUBDIRS)), $(MAKE) -C $(sub) clean;)
