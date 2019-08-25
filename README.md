@@ -47,6 +47,7 @@ Both peripherals and the central kill the connection after a short timeout (5s).
 * Denial of Service cannot easily be cancelled out when using BLE.
 * Like legacy-keys made out of metal, one of the BLE keys could be stolen and misused
 * Parts are not super-cheap: The central costs 10€ and one keyfob cost 5.50€
+* These chinese boards seem to come with **fake** chips, whose **access port protection is broken**
 
 ## FAQ
 * Why BLE?
