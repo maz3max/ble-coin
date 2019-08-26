@@ -263,6 +263,11 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
         LOG_DBG("bt_conn_security successful");
     }
 
+    while (bt_conn_enc_key_size(conn) != 16) {
+        LOG_ERR("NO ENCRYPTION ENABLED. WAITING...");
+        k_yield();
+    }
+
     LOG_DBG("Starting Discovery...");
     discover_params.uuid = &auth_service_uuid.uuid;
     discover_params.func = discover_func;
@@ -364,11 +369,6 @@ static u8_t discover_func(struct bt_conn *conn,
 
             LOG_INF("Discover complete");
             (void) memset(params, 0, sizeof(*params));
-
-            if (bt_conn_enc_key_size(conn) == 0) {
-                LOG_ERR("NO ENCRYPTION ENABLED. REFUSE TO SEND CHALLENGE.");
-                bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
-            }
 
             LOG_DBG("Generating new challenge");
             bt_rand(challenge, 64);
