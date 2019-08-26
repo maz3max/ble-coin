@@ -5,10 +5,6 @@ import fcntl
 import os
 import binascii
 
-# regex to parse address and IRK
-id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
-
-
 # generate C-Style definition of a byte string
 def byte_str_to_c_def(s):
     hex_arr = ["0x%02x" % b for b in s]
@@ -47,6 +43,12 @@ def periph_defines(periph_addr, periph_irk, central_addr, central_irk, ltk,
     string += "#define INSERT_SPACEKEY_HERE %s\n" % byte_str_to_c_def(spacekey)
     return string
 
+def periph_storage_partition(periph_addr, periph_irk, central_addr, central_irk, ltk,
+                   spacekey):
+    pass
+
+# regex to parse address and IRK
+id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
 
 # parses a line of either the central.txt or coins.txt and extracts BLE address, address type and IRK
 def parse_id_line(line):
