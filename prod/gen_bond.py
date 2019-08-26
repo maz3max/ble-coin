@@ -5,6 +5,7 @@ import fcntl
 import os
 import binascii
 
+
 # generate C-Style definition of a byte string
 def byte_str_to_c_def(s):
     hex_arr = ["0x%02x" % b for b in s]
@@ -43,12 +44,45 @@ def periph_defines(periph_addr, periph_irk, central_addr, central_irk, ltk,
     string += "#define INSERT_SPACEKEY_HERE %s\n" % byte_str_to_c_def(spacekey)
     return string
 
+
+# CRC-8-CCITT with initial value 0xFF: checksum used in FCB
+def fcb_crc8(data):
+    crc8_ccitt_small_table = bytes([0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15,
+                                    0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d])
+    val = 0xFF
+    for b in data:
+        val ^= b
+        val = ((val << 4) & 0xFF) ^ crc8_ccitt_small_table[val >> 4]
+        val = ((val << 4) & 0xFF) ^ crc8_ccitt_small_table[val >> 4]
+    return val
+
+
+# generate FCB storage item from data
+def gen_storage_item(data):
+    data_w_len = bytes([len(data)]) + data
+    return data_w_len + bytes([fcb_crc8(data_w_len)])
+
+
+# generate storage partition
 def periph_storage_partition(periph_addr, periph_irk, central_addr, central_irk, ltk,
-                   spacekey):
-    pass
+                             spacekey):
+    magic_header = b'\xee\xee\xff\xc0\x01\xff\x00\x00'
+    bt_id = b'bt/id=\x01' + bytes(periph_addr)
+    bt_irk = b'bt/irk=' + bytes(periph_irk)
+    bt_keys = b'bt/keys/' + binascii.hexlify(central_addr[::-1]) + b'1=\x10\x11"\x00' + b'\x00' * 10 + \
+              bytes(ltk) + bytes(central_irk) + b'\x00' * 6
+    space_key = b'space/key=' + bytes(spacekey)
+    data = magic_header + \
+           gen_storage_item(bt_id) + \
+           gen_storage_item(bt_irk) + \
+           gen_storage_item(bt_keys) + \
+           gen_storage_item(space_key)
+    return data + b'\xff' * (0x6000 - len(data))
+
 
 # regex to parse address and IRK
 id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
+
 
 # parses a line of either the central.txt or coins.txt and extracts BLE address, address type and IRK
 def parse_id_line(line):
@@ -132,3 +166,7 @@ if __name__ == '__main__':
     # create defines file
     with open("../factory-bonding-onchip/src/main.h", "w") as f:
         f.write(periph_defines(p_addr, p_irk, c_addr, c_irk, ltk, spacekey))
+
+    with open("storage.bin", "wb") as f:
+        s = periph_storage_partition(p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
+        f.write(s)
