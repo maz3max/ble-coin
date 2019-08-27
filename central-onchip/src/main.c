@@ -262,24 +262,6 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
     } else {
         LOG_DBG("bt_conn_security successful");
     }
-
-    while (bt_conn_enc_key_size(conn) != 16) {
-        LOG_ERR("NO ENCRYPTION ENABLED. WAITING...");
-        k_yield();
-    }
-
-    LOG_DBG("Starting Discovery...");
-    discover_params.uuid = &auth_service_uuid.uuid;
-    discover_params.func = discover_func;
-    discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-    discover_params.start_handle = 0x0001;
-    discover_params.end_handle = 0xffff;
-
-    err = bt_gatt_discover(conn, &discover_params);
-    if (err) {
-        LOG_ERR("Discover failed(err %d)", err);
-        return;
-    }
 }
 
 /**
@@ -289,11 +271,23 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
  * @param level new security level
  */
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level) {
-    char addr[BT_ADDR_LE_STR_LEN];
+    if (conn == default_conn) {
+        LOG_DBG("Security changed: level %u", level);
+        if (level == 4 && bt_conn_enc_key_size(conn) == 16) {
+            LOG_DBG("Starting Discovery...");
+            discover_params.uuid = &auth_service_uuid.uuid;
+            discover_params.func = discover_func;
+            discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+            discover_params.start_handle = 0x0001;
+            discover_params.end_handle = 0xffff;
 
-    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-    LOG_DBG("Security changed: %s level %u", log_strdup(addr), level);
+            int err = bt_gatt_discover(conn, &discover_params);
+            if (err) {
+                LOG_ERR("Discover failed(err %d)", err);
+                return;
+            }
+        }
+    }
 }
 
 
