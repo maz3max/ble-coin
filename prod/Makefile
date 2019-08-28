@@ -1,14 +1,14 @@
-SUBDIRS = $(wildcard ../build/*/Makefile)
-HEXFILES = $(patsubst ../build/%/Makefile, %.hex, $(SUBDIRS))
+SUBDIRS = $(wildcard build/*/Makefile)
+HEXFILES = $(patsubst build/%/Makefile, %.hex, $(SUBDIRS))
 
 .PHONY: all
 all: $(HEXFILES)
 
-.PRECIOUS: ../build/%/zephyr/zephyr.hex
-../build/%/zephyr/zephyr.hex:
+.PRECIOUS: build/%/zephyr/zephyr.hex
+build/%/zephyr/zephyr.hex:
 	$(MAKE) -C $(shell dirname $@)
 
-%.hex: ../build/%/zephyr/zephyr.hex
+%.hex: build/%/zephyr/zephyr.hex
 	cp $^ $@
 
 .PHONY: clean
