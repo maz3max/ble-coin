@@ -4,6 +4,7 @@ import re
 import fcntl
 import os
 import binascii
+from intelhex import IntelHex
 
 
 # generate C-Style definition of a byte string
@@ -167,6 +168,18 @@ if __name__ == '__main__':
     with open("../factory-bonding-onchip/src/main.h", "w") as f:
         f.write(periph_defines(p_addr, p_irk, c_addr, c_irk, ltk, spacekey))
 
-    with open("storage.bin", "wb") as f:
-        s = periph_storage_partition(p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
-        f.write(s)
+    # create storage partition
+    storage_bytes = periph_storage_partition(p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
+
+    addr_string = binascii.hexlify(p_addr[::-1]).decode()
+
+    # write storage partition to bin file
+    with open("storage_%s.bin" % addr_string, "wb") as f:
+        f.write(storage_bytes)
+
+    # create merged hex file for easy programming
+    storage = IntelHex()
+    storage[0x32000:0x38000] = list(storage_bytes)
+    coin = IntelHex("coin.hex")
+    coin.merge(storage, overlap="replace")
+    coin.tofile("coin_%s.hex" % addr_string, format="hex")
