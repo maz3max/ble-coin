@@ -47,7 +47,8 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 
 static void connected_cb(struct bt_conn *conn, u8_t err);
 
-static void security_changed_cb(struct bt_conn *conn, bt_security_t level);
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
+                                enum bt_security_err err);
 
 static u8_t discover_func(struct bt_conn *conn,
                           const struct bt_gatt_attr *attr,
@@ -75,7 +76,7 @@ static struct bt_gatt_discover_params discover_params = {0};
 // params for bt_gatt_subscribe
 static struct bt_gatt_subscribe_params subscribe_params = {
         .value = BT_GATT_CCC_INDICATE,
-        .flags = 0,
+        .flags = {0},
         .notify = notify_func,
 };
 // collection of conn callbacks
@@ -255,7 +256,7 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
             addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1],
             addr->a.val[0]);
 
-    int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
+    int ret = bt_conn_set_security(conn, BT_SECURITY_L4);
     if (ret) {
         LOG_ERR("Kill connection: insufficient security %i", ret);
         bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
@@ -270,10 +271,11 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
  * @param conn current connection
  * @param level new security level
  */
-static void security_changed_cb(struct bt_conn *conn, bt_security_t level) {
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
+                                enum bt_security_err err) {
     if (conn == default_conn) {
         LOG_DBG("Security changed: level %u", level);
-        if (level == 4 && bt_conn_enc_key_size(conn) == 16) {
+        if (err == 0 && level == 4 && bt_conn_enc_key_size(conn) == 16) {
             LOG_DBG("Starting Discovery...");
             discover_params.uuid = &auth_service_uuid.uuid;
             discover_params.func = discover_func;

@@ -73,7 +73,7 @@ static void connected(struct bt_conn *conn, u8_t err) {
         default_conn = bt_conn_ref(conn);
         LOG_INF("connected");
 
-        if (bt_conn_security(conn, BT_SECURITY_FIPS)) {
+        if (bt_conn_set_security(conn, BT_SECURITY_L4)) {
             LOG_INF("Kill connection: insufficient security");
             bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
         }
