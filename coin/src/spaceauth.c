@@ -22,11 +22,15 @@ static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
         0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95,
         0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f);
 
-static struct bt_gatt_ccc_cfg auth_ccc_cfg[BT_GATT_CCC_MAX] = {0};
-
 static uint8_t auth_key[BLAKE2S_KEYBYTES] = {0};
 static uint8_t challenge[BLAKE2S_BLOCKBYTES] = {0};
 static uint8_t response[BLAKE2S_OUTBYTES] = {0};
+
+static u8_t ccc_value;
+
+static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value) {
+    ccc_value = value;
+}
 
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                         u8_t err) {
@@ -62,7 +66,7 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
                        BT_GATT_CHARACTERISTIC(&auth_response_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE,
                                               BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_READ_ENCRYPT,
                                               read_response, NULL, response),
-                       BT_GATT_CCC(auth_ccc_cfg, NULL)
+                       BT_GATT_CCC(ccc_cfg_changed)
 );
 
 static ssize_t write_challenge(struct bt_conn *conn,
@@ -78,11 +82,13 @@ static ssize_t write_challenge(struct bt_conn *conn,
 
     if (offset + len == BLAKE2S_BLOCKBYTES) {
         blake2s(response, BLAKE2S_OUTBYTES, challenge, BLAKE2S_BLOCKBYTES, auth_key, BLAKE2S_KEYBYTES);
-        ind_params.attr = &auth_svc.attrs[4];
-        u16_t mtu = bt_gatt_get_mtu(conn);
-        ind_params.len = MIN(mtu - 3, BLAKE2S_OUTBYTES);
-        LOG_INF("connection has MTU: %u", mtu);
-        bt_gatt_indicate(NULL, &ind_params);
+        if (ccc_value == BT_GATT_CCC_INDICATE) {
+            ind_params.attr = &auth_svc.attrs[4];
+            u16_t mtu = bt_gatt_get_mtu(conn);
+            ind_params.len = MIN(mtu - 3, BLAKE2S_OUTBYTES);
+            LOG_INF("connection has MTU: %u", mtu);
+            bt_gatt_indicate(NULL, &ind_params);
+        }
     }
 
     return len;
