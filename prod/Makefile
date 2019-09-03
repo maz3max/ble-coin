@@ -1,22 +1,23 @@
-SUBDIRS = $(wildcard build/*/Makefile)
-HEXFILES = $(patsubst build/%/Makefile, %.hex, $(SUBDIRS))
-
 .PHONY: all
-all: $(HEXFILES)
-
-.PRECIOUS: build/%/zephyr/zephyr.hex
-build/%/zephyr/zephyr.hex:
-	$(MAKE) -C $(shell dirname $@)
-
-%.hex: build/%/zephyr/zephyr.hex
-	cp $^ $@
+all: coin central pre
 
 .PHONY: clean
 clean:
-	@find *.hex -not -name 'UICR_APPROTECT_clear.hex' -delete
-	$(foreach sub, $(patsubst %/Makefile, %, $(SUBDIRS)), rm -f $(sub)/zephyr/zephyr.*;)
+	rm coin.hex central.hex pre.hex -f
+	rm build/ -rf
 
-.PHONY: squeaky-clean
-squeaky-clean:
-	@find *.hex -not -name 'UICR_APPROTECT_clear.hex' -delete
-	$(foreach sub, $(patsubst %/Makefile, %, $(SUBDIRS)), $(MAKE) -C $(sub) clean;)
+.PHONY: coin
+coin:
+	west build -d build/coin ../coin/
+	cp build/coin/zephyr/zephyr.hex coin.hex
+
+.PHONY: central
+central:
+	west build -d build/central ../central-onchip/
+	cp build/central/zephyr/zephyr.hex central.hex
+
+.PHONY: pre
+pre:
+	west build -d build/pre ../factory-bonding-onchip/
+	cp build/pre/zephyr/zephyr.hex pre.hex
+
