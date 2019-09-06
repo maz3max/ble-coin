@@ -182,4 +182,6 @@ if __name__ == '__main__':
     storage[0x32000:0x38000] = list(storage_bytes)
     coin = IntelHex("coin.hex")
     coin.merge(storage, overlap="replace")
+    coin[0x10001208:0x10001208 + 4] = [0x00] * 4  # enable Access Port Protection
     coin.tofile("coin_%s.hex" % addr_string, format="hex")
+
