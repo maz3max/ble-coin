@@ -2,7 +2,7 @@
 The purpose of this project is to provide members of the [NETZ39 Hackerspace](http://www.netz39.de/) a new, (sufficiently) secure and easy-to-use way to unlock the door of the Hackerspace.
 
 ## Principle Structure
-This project uses Bluetooth Low Energy 4.2 (with a 5.1 stack) as a wireless transport. An **authenticated**, **encrypted** and **private** connection is used with security mode 1 level 4. On top of BLE security, a simple [HMAC based challenge-response authentication](https://crypto.stackexchange.com/questions/51931/hmac-based-challenge-response-authentication) using the [BLAKE2s hash function](https://blake2.net/) is used.
+This project uses Bluetooth Low Energy 4.2 (with a 5.1 stack) as a wireless transport. An **authenticated**, **encrypted** and **private** connection is used with security mode 1 level 4. On top of BLE security, a simple [MAC based challenge-response authentication](https://crypto.stackexchange.com/questions/51931/hmac-based-challenge-response-authentication) using the [BLAKE2s hash function](https://blake2.net/) in MAC mode is used.
 
 Components:
 * A central (base station) with a NRF52480 chip, here a [**NRF52840 dongle**](https://www.nordicsemi.com/?sc_itemid=%7BCDCCA013-FE4C-4655-B20C-1557AB6568C9%7D)
