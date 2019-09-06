@@ -261,7 +261,7 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
         LOG_ERR("Kill connection: insufficient security %i", ret);
         bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
     } else {
-        LOG_DBG("bt_conn_security successful");
+        LOG_INF("bt_conn_security successful");
     }
 }
 
