@@ -72,15 +72,6 @@ static void connected(struct bt_conn *conn, u8_t err) {
         }
         default_conn = bt_conn_ref(conn);
         LOG_INF("connected");
-
-        int ret = bt_conn_set_security(conn, BT_SECURITY_L4);
-    if (ret) {
-        LOG_ERR("Kill connection: insufficient security %i", ret);
-        bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
-    } else {
-        LOG_DBG("bt_conn_security successful");
-    }
-
         set_blink_intensity(BI_AGGRESSIVE);
     }
 }
