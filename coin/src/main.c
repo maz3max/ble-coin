@@ -98,7 +98,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason) {
         default_conn = NULL;
     }
     LOG_INF("going to sleep");
-    //sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
+    sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 }
 
 // collection of connection callbacks
