@@ -249,7 +249,6 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
     led1_set(1, 0, 0);
 
     // set up timeout
-    k_delayed_work_init(&timeout_timer, timeout);
     k_delayed_work_submit(&timeout_timer, K_SECONDS(5));
 
     LOG_INF("Connected: [%02X:%02X:%02X:%02X:%02X:%02X]", addr->a.val[5],
@@ -510,4 +509,5 @@ static void disconnected_cb(struct bt_conn *conn, u8_t reason) {
 void main(void) {
     spaceauth_init();
     leds_init();
+    k_delayed_work_init(&timeout_timer, timeout);
 }
