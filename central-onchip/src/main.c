@@ -18,24 +18,17 @@ LOG_MODULE_REGISTER(app);
 static struct bt_conn *default_conn = NULL;
 
 // library of UUIDs
-static struct bt_uuid_128 auth_service_uuid = BT_UUID_INIT_128(
-        0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b,
-        0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66);
-static struct bt_uuid_128 auth_challenge_uuid = BT_UUID_INIT_128(
-        0xd5, 0x12, 0x7b, 0x77, 0xce, 0xba, 0xa7, 0xb1,
-        0x86, 0x9a, 0x90, 0x47, 0x02, 0xc9, 0x3d, 0x95);
-static struct bt_uuid_128 auth_response_uuid = BT_UUID_INIT_128(
-        0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95,
-        0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f);
-static struct bt_uuid_16 gatt_ccc_uuid = BT_UUID_INIT_16(0x2902);
+#define UUID_AUTH_SERVICE    BT_UUID_DECLARE_128(0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b, 0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66)
+#define UUID_AUTH_CHALLENGE    BT_UUID_DECLARE_128(0xd5, 0x12, 0x7b, 0x77, 0xce, 0xba, 0xa7, 0xb1, 0x86, 0x9a, 0x90, 0x47, 0x02, 0xc9, 0x3d, 0x95)
+#define UUID_AUTH_RESPONSE    BT_UUID_DECLARE_128(0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95, 0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f)
+
+static struct bt_uuid_16 uuid_16 = {0};
+static struct bt_uuid_128 uuid_128 = {0};
+
 
 // save slots for discovered GATT handles
-static uint16_t auth_svc_handle = 0;
-static uint16_t auth_challenge_chr_handle = 0;
-static uint16_t auth_challenge_chr_value_handle = 0;
-static uint16_t auth_response_chr_handle = 0;
 static uint16_t auth_response_chr_value_handle = 0;
-static uint16_t auth_response_chr_ccc_handle = 0;
+static uint16_t auth_challenge_chr_value_handle = 0;
 
 uint8_t challenge[64] = {0};
 uint8_t response[32] = {0};
@@ -77,7 +70,6 @@ static struct bt_gatt_discover_params discover_params = {0};
 // params for bt_gatt_subscribe
 static struct bt_gatt_subscribe_params subscribe_params = {
         .value = BT_GATT_CCC_INDICATE,
-        .flags = {0},
         .notify = notify_func,
 };
 // collection of conn callbacks
@@ -291,7 +283,8 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
         LOG_DBG("Security changed: level %u", level);
         if (err == 0 && level == 4 && bt_conn_enc_key_size(conn) == 16) {
             LOG_DBG("Starting Discovery...");
-            discover_params.uuid = &auth_service_uuid.uuid;
+            memcpy(&uuid_128, UUID_AUTH_SERVICE, sizeof(uuid_128));
+            discover_params.uuid = &uuid_128.uuid;
             discover_params.func = discover_func;
             discover_params.type = BT_GATT_DISCOVER_PRIMARY;
             discover_params.start_handle = 0x0001;
@@ -322,11 +315,11 @@ static u8_t discover_func(struct bt_conn *conn,
     if (attr) {
         LOG_DBG("[ATTRIBUTE] handle %u", attr->handle);
 
-        if (!bt_uuid_cmp(params->uuid, &auth_service_uuid.uuid)) {
+        if (!bt_uuid_cmp(params->uuid, UUID_AUTH_SERVICE)) {
             LOG_DBG("found auth service handle %u", attr->handle);
-            auth_svc_handle = attr->handle;
             //next up: search challenge chr
-            discover_params.uuid = &auth_challenge_uuid.uuid;
+            memcpy(&uuid_128, UUID_AUTH_CHALLENGE, sizeof(uuid_128));
+            discover_params.uuid = &uuid_128.uuid;
             discover_params.start_handle = attr->handle + 1;
             discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 
@@ -335,29 +328,29 @@ static u8_t discover_func(struct bt_conn *conn,
                 LOG_ERR("challenge chr discovery failed (err %d)", err);
                 bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             }
-        } else if (!bt_uuid_cmp(params->uuid, &auth_challenge_uuid.uuid)) {
+        } else if (!bt_uuid_cmp(params->uuid, UUID_AUTH_CHALLENGE)) {
             LOG_DBG("found auth challenge chr handle %u", attr->handle);
-            auth_challenge_chr_handle = attr->handle;
-            auth_challenge_chr_value_handle = attr->handle + 1;
+            auth_challenge_chr_value_handle = bt_gatt_attr_value_handle(attr);
             //next up: search response chr
+            memcpy(&uuid_128, UUID_AUTH_RESPONSE, sizeof(uuid_128));
+            discover_params.uuid = &uuid_128.uuid;
             discover_params.start_handle = attr->handle + 2;
-            discover_params.uuid = &auth_response_uuid.uuid;
 
             err = bt_gatt_discover(default_conn, &discover_params);
             if (err) {
                 LOG_ERR("response chr discovery failed (err %d)", err);
                 bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             }
-        } else if (!bt_uuid_cmp(params->uuid, &auth_response_uuid.uuid)) {
+        } else if (!bt_uuid_cmp(params->uuid, UUID_AUTH_RESPONSE)) {
             LOG_DBG("found auth response chr handle %u", attr->handle);
-            auth_response_chr_handle = attr->handle;
-            auth_response_chr_value_handle = attr->handle + 1;
-            subscribe_params.value_handle = attr->handle + 1;
+            auth_response_chr_value_handle = bt_gatt_attr_value_handle(attr);
+            subscribe_params.value_handle = auth_response_chr_value_handle;
 
             //next up: search response chr cccd
-            discover_params.start_handle = attr->handle + 2;
-            discover_params.uuid = &gatt_ccc_uuid.uuid;
+            memcpy(&uuid_16, BT_UUID_GATT_CCC, sizeof(uuid_16));
+            discover_params.uuid = &uuid_16.uuid;
             discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
+            discover_params.start_handle = attr->handle + 2;
 
             err = bt_gatt_discover(default_conn, &discover_params);
             if (err) {
@@ -366,7 +359,6 @@ static u8_t discover_func(struct bt_conn *conn,
             }
         } else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
             LOG_DBG("found auth response chr cccd handle %u", attr->handle);
-            auth_response_chr_ccc_handle = attr->handle;
             subscribe_params.ccc_handle = attr->handle;
 
             err = bt_gatt_subscribe(default_conn, &subscribe_params);
@@ -393,7 +385,6 @@ static u8_t discover_func(struct bt_conn *conn,
                 LOG_ERR("Challenge write failed(err %d)", err);
                 bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             }
-
         }
     }
     return BT_GATT_ITER_STOP;
