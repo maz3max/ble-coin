@@ -5,7 +5,7 @@
 #include <logging/log.h>
 #include <settings/settings.h>
 #include <shell/shell.h>
-#include <drivers/watchdog.h>
+#include <watchdog.h>
 #include <zephyr.h>
 #include <hci_core.h> //use of internal hci API for 'bt_addr_le_is_bonded(id, addr)'
 // own includes
@@ -41,8 +41,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 
 static void connected_cb(struct bt_conn *conn, u8_t err);
 
-static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
-                                enum bt_security_err err);
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level);
 
 static u8_t discover_func(struct bt_conn *conn,
                           const struct bt_gatt_attr *attr,
@@ -262,12 +261,12 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
             addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1],
             addr->a.val[0]);
 
-    int ret = bt_conn_set_security(conn, BT_SECURITY_L4);
+    int ret = bt_conn_security(conn, BT_SECURITY_FIPS);
     if (ret) {
         LOG_ERR("Kill connection: insufficient security %i", ret);
         bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
     } else {
-        LOG_INF("bt_conn_security successful");
+        LOG_DBG("bt_conn_security successful");
     }
 }
 
@@ -277,11 +276,10 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
  * @param conn current connection
  * @param level new security level
  */
-static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
-                                enum bt_security_err err) {
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level) {
     if (conn == default_conn) {
         LOG_DBG("Security changed: level %u", level);
-        if (err == 0 && level == 4 && bt_conn_enc_key_size(conn) == 16) {
+        if (level == 4 && bt_conn_enc_key_size(conn) == 16) {
             LOG_DBG("Starting Discovery...");
             memcpy(&uuid_128, UUID_AUTH_SERVICE, sizeof(uuid_128));
             discover_params.uuid = &uuid_128.uuid;
@@ -330,7 +328,7 @@ static u8_t discover_func(struct bt_conn *conn,
             }
         } else if (!bt_uuid_cmp(params->uuid, UUID_AUTH_CHALLENGE)) {
             LOG_DBG("found auth challenge chr handle %u", attr->handle);
-            auth_challenge_chr_value_handle = bt_gatt_attr_value_handle(attr);
+            auth_challenge_chr_value_handle = attr->handle + 1;
             //next up: search response chr
             memcpy(&uuid_128, UUID_AUTH_RESPONSE, sizeof(uuid_128));
             discover_params.uuid = &uuid_128.uuid;
@@ -343,7 +341,7 @@ static u8_t discover_func(struct bt_conn *conn,
             }
         } else if (!bt_uuid_cmp(params->uuid, UUID_AUTH_RESPONSE)) {
             LOG_DBG("found auth response chr handle %u", attr->handle);
-            auth_response_chr_value_handle = bt_gatt_attr_value_handle(attr);
+            auth_response_chr_value_handle = attr->handle + 1;
             subscribe_params.value_handle = auth_response_chr_value_handle;
 
             //next up: search response chr cccd

@@ -81,19 +81,15 @@ spacekey_t *spacekey_lookup(const bt_addr_le_t *addr) {
     return NULL;
 }
 
-static int space_settings_set(const char *key, size_t len_rd,
-                              settings_read_cb read_cb, void *cb_arg) {
-    const char *next;
-
-    settings_name_next(key, &next);
-    if (!next) {
+static int space_settings_set(int argc, char **argv, void *value_ctx) {
+    if (argc == 1) {
         bt_addr_le_t addr;
-        if (!space_settings_decode_key(key, &addr)) {
+        if (!space_settings_decode_key(argv[0], &addr)) {
             spacekey_t *slot = spacekey_lookup_add(&addr);
             if (!slot) {
                 return -ENOSPC;
             }
-            ssize_t len = read_cb(cb_arg, slot->key, BLAKE2S_KEYBYTES);
+            ssize_t len = settings_val_read_cb(value_ctx, slot->key, BLAKE2S_KEYBYTES);
             if (!len) {
                 memset(&slot->addr, 0, sizeof(slot->addr));
                 return 0;
@@ -129,7 +125,7 @@ int spacekey_add(const bt_addr_le_t *addr, const uint8_t *key) {
     }
     memcpy(&slot->addr, addr, sizeof(bt_addr_le_t));
     memcpy(slot->key, key, BLAKE2S_KEYBYTES);
-    settings_save_one(path, key, BLAKE2S_KEYBYTES);
+    settings_save_one(path, (void*)key, BLAKE2S_KEYBYTES);
     return 0;
 }
 
