@@ -159,7 +159,7 @@ static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
     char key[BT_SETTINGS_KEY_MAX];
     bt_settings_encode_key(key, sizeof(key), "keys", &keys.addr, NULL);
     bt_keys_store(&keys);
-    settings_load_subtree(key);
+    settings_set_value(key, keys.storage_start, BT_KEYS_STORAGE_LEN);
     shell_info(shell, "done");
     return 0;
 }
@@ -252,8 +252,8 @@ static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv
     LOG_DBG("valid IRK");
     settings_save_one("bt/irk", irk, sizeof(irk));
     settings_save_one("bt/id", &addr, sizeof(bt_addr_le_t));
-    settings_load_subtree("bt/irk");
-    settings_load_subtree("bt/id");
+    settings_set_value("bt/irk", irk, sizeof(irk));
+    settings_set_value("bt/id", &addr, sizeof(bt_addr_le_t));
     shell_info(shell, "done");
     return 0;
 }
