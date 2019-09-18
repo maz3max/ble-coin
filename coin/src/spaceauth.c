@@ -27,6 +27,7 @@ static uint8_t challenge[BLAKE2S_BLOCKBYTES] = {0};
 static uint8_t response[BLAKE2S_OUTBYTES] = {0};
 
 static u8_t ccc_value;
+static struct bt_gatt_ccc_cfg  ccc_cfg[BT_GATT_CCC_MAX] = {};
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value) {
     ccc_value = value;
@@ -58,7 +59,7 @@ static ssize_t read_response(struct bt_conn *conn,
                              BLAKE2S_OUTBYTES);
 }
 
-BT_GATT_SERVICE_DEFINE(auth_svc,
+static struct bt_gatt_attr attrs[] = {
                        BT_GATT_PRIMARY_SERVICE(&auth_service_uuid),
                        BT_GATT_CHARACTERISTIC(&auth_challenge_uuid.uuid, BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH,
                                               BT_GATT_PERM_WRITE_AUTHEN | BT_GATT_PERM_WRITE_ENCRYPT,
@@ -66,8 +67,10 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
                        BT_GATT_CHARACTERISTIC(&auth_response_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE,
                                               BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_READ_ENCRYPT,
                                               read_response, NULL, response),
-                       BT_GATT_CCC(ccc_cfg_changed)
-);
+                       BT_GATT_CCC(ccc_cfg, ccc_cfg_changed)
+};
+
+static struct bt_gatt_service auth_svc = BT_GATT_SERVICE(attrs);
 
 static ssize_t write_challenge(struct bt_conn *conn,
                                const struct bt_gatt_attr *attr,
@@ -95,15 +98,10 @@ static ssize_t write_challenge(struct bt_conn *conn,
 }
 
 //settings stuff
-static int set(const char *key, size_t len_rd,
-               settings_read_cb read_cb, void *cb_arg) {
-    int key_len;
-    const char *next;
-
-    key_len = settings_name_next(key, &next);
-    if (!next) {
-        if (!strncmp(key, "key", key_len)) {
-            ssize_t len = read_cb(cb_arg, auth_key, BLAKE2S_KEYBYTES);
+static int set(int argc, char **argv, void *value_ctx) {
+    if (argc == 1) {
+        if (!strcmp(argv[0], "key")) {
+            ssize_t len = settings_val_read_cb(value_ctx, auth_key, BLAKE2S_KEYBYTES);
             if (len != BLAKE2S_KEYBYTES) {
                 memset(auth_key, 0, BLAKE2S_KEYBYTES);
                 return (len < 0) ? len : -EINVAL;
@@ -123,7 +121,7 @@ static struct settings_handler auth_settings = {
 void space_auth_init(void) {
     LOG_INF("initialize space auth");
     int err;
-
+    bt_gatt_service_register(&auth_svc);
     err = settings_subsys_init();
     if (err) {
         LOG_ERR("settings_subsys_init failed (err %d)", err);

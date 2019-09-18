@@ -23,7 +23,7 @@ static struct device *adc_dev = NULL;
 #define ADC_1ST_CHANNEL_INPUT NRF_SAADC_INPUT_AIN0
 
 #define BAT_LOW 3
-#define BAT_PORT DT_ALIAS_LED0_GPIOS_CONTROLLER
+#define BAT_PORT LED0_GPIO_CONTROLLER
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
         .gain = ADC_GAIN,
@@ -92,15 +92,17 @@ static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 /* Battery Service Declaration */
-BT_GATT_SERVICE_DEFINE(bas_svc,
+static struct bt_gatt_attr attrs[] = {
                        BT_GATT_PRIMARY_SERVICE(BT_UUID_BAS),
                        BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
                                               BT_GATT_CHRC_READ,
                                               BT_GATT_PERM_READ, read_blvl, NULL, &battery),
-);
+};
+static struct bt_gatt_service bas_svc = BT_GATT_SERVICE(attrs);
 
 uint8_t bas_init(){
     LOG_INF("initialize battery service");
+    bt_gatt_service_register(&bas_svc);
     init_adc();
     battery = get_batt_percentage();
     return battery;
