@@ -44,11 +44,11 @@ def read_setting(item):
         id_type = item[6]
         id = item[12:6:-1]  # addr is reversed
         print(':'.join(['%02X' % x for x in id]), 'type=' + str(id_type))
-    elif len(item) == 23 and  item[:7] == b'bt/irk=':
+    elif len(item) == 23 and item[:7] == b'bt/irk=':
         print('bt/irk:', end=' ')
         periph_irk = item[7:23]
         print(binascii.hexlify(periph_irk).decode().upper())
-    elif len(item) == 74 and  item[:8] == b'bt/keys/':
+    elif len(item) == 74 and item[:8] == b'bt/keys/':
         print('bt/keys:', end=' ')
         print(':'.join(wrap(item[8:20].decode().upper(), 2)), 'type=' + bytes([item[20]]).decode(), end=' ')
         assert item[21] == b'='[0]
@@ -75,6 +75,11 @@ def read_setting(item):
         print('space/key:', end=' ')
         spacekey = item[10:42]
         print(binascii.hexlify(spacekey).decode().upper())
+    elif len(item) == 52 and item[:6] == b'space/':
+        print('space:', end=' ')
+        print(':'.join(wrap(item[6:18].decode().upper(), 2)), 'type=' + bytes([item[18]]).decode(), end=' ')
+        assert item[19] == b'='[0]
+        print('spacekey=%s' % binascii.hexlify(item[20:52]).decode().upper())
     else:
         print(item)
 
