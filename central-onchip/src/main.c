@@ -89,20 +89,6 @@ static void timeout(struct k_work *work) {
     }
 }
 
-struct device *wdt;
-int wdt_channel_id;
-struct wdt_timeout_cfg wdt_config = {
-        .flags = WDT_FLAG_RESET_SOC,
-        .window.min = 0U,
-        .window.max = 5000U
-};
-
-static struct k_timer watchdog_timer;
-
-static void watchdog_timer_expiry_function(struct k_timer *timer_id) {
-    wdt_feed(wdt, wdt_channel_id);
-}
-
 // helper function for advertisement data parser
 bool ad_parse_func(struct bt_data *data, void *user_data) {
     int16_t *batt = user_data;
@@ -516,25 +502,4 @@ void main(void) {
     spaceauth_init();
     leds_init();
     k_delayed_work_init(&timeout_timer, timeout);
-
-    // install watchdog
-    wdt = device_get_binding(DT_WDT_0_NAME);
-    if (!wdt) {
-        LOG_ERR("Cannot get WDT device");
-    }
-    wdt_channel_id = wdt_install_timeout(wdt, &wdt_config);
-    if (wdt_channel_id < 0) {
-        LOG_ERR("Watchdog install error");
-    } else {
-        LOG_INF("Watchdog installed");
-    }
-    if (wdt_setup(wdt, 0) < 0) {
-        LOG_ERR("Watchdog setup error");
-    } else {
-        LOG_INF("Watchdog setup successful");
-    }
-    wdt_feed(wdt, wdt_channel_id);
-
-    k_timer_init(&watchdog_timer, watchdog_timer_expiry_function, NULL);
-    k_timer_start(&watchdog_timer, K_MSEC(2500), K_MSEC(2500));
 }
