@@ -2,9 +2,10 @@
 import argparse
 import binascii
 from textwrap import wrap
+from intelhex import IntelHex as IH
 
 parser = argparse.ArgumentParser(description='Analyze Zephyr FCB storage and print contents.')
-parser.add_argument('bin', type=argparse.FileType('rb'), help='binary dump of the storage partition')
+parser.add_argument('file', help='binary dump of the storage partition')
 
 
 def fcb_crc8(data):
@@ -69,7 +70,7 @@ def read_setting(item):
         rpa = item[73:67:-1]  # rpa[6], reversed address
         if rpa != b'\x00' * 6:
             print('RPA=', end='')
-            print(':'.join(['%02X' % x for x in rpa], end=''))
+            print(':'.join(['%02X' % x for x in rpa]), end='')
         print('')
     elif len(item) == 42 and item[:10] == b'space/key=':
         print('space/key:', end=' ')
@@ -86,7 +87,15 @@ def read_setting(item):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    storage = args.bin.read()
+    if args.file[-4:] == '.bin':
+        with open(args.file, "rb") as file:
+            storage = file.read()
+    elif args.file[-4:] == '.hex':
+        ih = IH(args.file)
+        storage = ih.tobinstr()
+    else:
+        print("unrecognized file extension", file=sys.stderr)
+        sys.exit(-1)
     items = read_items(storage)
     for i in items:
         read_setting(i)
