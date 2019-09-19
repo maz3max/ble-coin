@@ -76,6 +76,11 @@ def read_setting(item):
         print('space/key:', end=' ')
         spacekey = item[10:42]
         print(binascii.hexlify(spacekey).decode().upper())
+    elif len(item) == 52 and item[:6] == b'space/':
+        print('space:', end=' ')
+        print(':'.join(wrap(item[6:18].decode().upper(), 2)), 'type=' + bytes([item[18]]).decode(), end=' ')
+        assert item[19] == b'='[0]
+        print('spacekey=%s' % binascii.hexlify(item[20:52]).decode().upper())
     else:
         print(item)
 
