@@ -173,13 +173,10 @@ if __name__ == '__main__':
 
     addr_string = binascii.hexlify(p_addr[::-1]).decode()
 
-    # write storage partition to bin file
-    with open("storage_%s.bin" % addr_string, "wb") as f:
-        f.write(storage_bytes)
-
     # create merged hex file for easy programming
     storage = IntelHex()
     storage[0x32000:0x38000] = list(storage_bytes)
+    storage.tofile("storage_%s.hex" % addr_string, format="hex")
     coin = IntelHex("coin.hex")
     coin.merge(storage, overlap="replace")
     coin[0x10001208:0x10001208 + 4] = [0x00] * 4  # enable Access Port Protection
