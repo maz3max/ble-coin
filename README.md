@@ -31,11 +31,11 @@ Both peripherals and the central kill the connection after a short timeout (5s).
 
 ## How to use?
 1. Install CMake, Python 3 and the Zephyr SDK at the standard location (`/opt/zephyr-sdk/`)
-2. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate a header for the compile-time pairing. Every coin gets a line in `coins.txt`. NOTE: You always compile for the coin that corresponds to the last line of the file.
-3. Compile the projects `coin\`, `factory-bonding-onchip\` and `central-onchip\` using CMake
-4. Flash `factory-bonding-onchip\` onto the keyfob and run it (at least once). This will initialize the settings into flash.
-5. Flash `coin\` onto the keyfob **without mass-erasing**.
-6. Flash `central-onchip\` onto the dongle. Connect to its USB Serial with Baudrate 115200 (on Linux, it is something like this`/dev/serial/by-id/usb-ZEPHYR_N39_BLE_KEYKEEPER_0.01-if00`)
+2. Go into the `prod/` folder and run the `./bootstrap.sh` script.
+3. Run `make` to build the projects.
+4. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate file for the specific coin containing the keys (e.g. `coin_d33efc87ed2e.hex`). Every coin gets a line in `coins.txt`.
+5. Flash `central.hex` onto the coin.
+6. Flash `central-onchip/` onto the dongle. Connect to its USB Serial with Baudrate 115200 (on Linux, it is something like this`/dev/serial/by-id/usb-ZEPHYR_N39_BLE_KEYKEEPER_0.01-if00`)
 7. Press enter to make sure you are in the shell
 8. use the `central_setup` command with the contents of your `central.txt` to initialize the address and the IRK of the central.
 9. use the `coin add` command with the last line of your `coins.txt` to add the newly compiled coin.
@@ -54,7 +54,7 @@ Both peripherals and the central kill the connection after a short timeout (5s).
     * the transport had to be wireless, low power and provide connection-level security
     * standardized and widespread technology allows to replace parts of the system easily
 * Why Zephyr?
-    * very active community
+    * very active & helpful community
     * Open-Source BLE Stack
     * supports CMake
     * build system less annoying than Apache Mynewt
