@@ -33,7 +33,7 @@ Both peripherals and the central kill the connection after a short timeout (5s).
 1. Install CMake, Python 3 and the Zephyr SDK at the standard location (`/opt/zephyr-sdk/`)
 2. Go into the `prod/` folder and run the `./bootstrap.sh` script.
 3. Run `make` to build the projects.
-4. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate file for the specific coin containing the keys (e.g. `coin_d33efc87ed2e.hex`). Every coin gets a line in `coins.txt`.
+4. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate a hex-file for the specific coin containing the keys (e.g. `coin_d33efc87ed2e.hex`). Every coin gets a line in `coins.txt`.
 5. Flash `central.hex` onto the coin.
 6. Flash `central-onchip/` onto the dongle. Connect to its USB Serial with Baudrate 115200 (on Linux, it is something like this`/dev/serial/by-id/usb-ZEPHYR_N39_BLE_KEYKEEPER_0.01-if00`)
 7. Press enter to make sure you are in the shell
