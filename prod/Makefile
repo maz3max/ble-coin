@@ -1,9 +1,9 @@
 .PHONY: all
-all: coin central pre
+all: coin central
 
 .PHONY: clean
 clean:
-	rm coin.hex central.hex pre.hex -f
+	rm coin.hex central.hex -f
 	rm build/ -rf
 
 .PHONY: coin
@@ -15,9 +15,3 @@ coin:
 central:
 	west build -d build/central ../central-onchip/
 	cp build/central/zephyr/zephyr.hex central.hex
-
-.PHONY: pre
-pre:
-	west build -d build/pre ../factory-bonding-onchip/
-	cp build/pre/zephyr/zephyr.hex pre.hex
-
