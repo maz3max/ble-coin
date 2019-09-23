@@ -2,8 +2,6 @@
 This folder contains the Python3-script `gen_bond.py`, which helps creating the Keys and addresses for the central and peripherals.
 Running the script initially will create two text files: `central.txt` and `coins.txt`.
 
-Additionally, the `main.h` file containing the data for the first coin will be placed into the `factory-bonding-onchip/src/` directory.
-
 ## gen_bond.py
 When executed, this script checks, if `central.txt` and `coins.txt` exist and populates them if needed. Every time this script runs, it adds a new coin line to `coins.txt`. Furthermore, it creates a hex-file for the generated coin bundeling the firmware and keys.
 For actually registering coins to the central, please refer to the README in `central-onship/`.
