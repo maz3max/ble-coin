@@ -61,6 +61,8 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 
 static void disconnected_cb(struct bt_conn *conn, u8_t reason);
 
+// switch to prevent the discovery to be started twice
+static bool security_established = false;
 // params for read_func
 static struct bt_gatt_read_params read_params;
 // params for write_func
@@ -232,6 +234,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
  * @param err possible error code when establishing connection
  */
 static void connected_cb(struct bt_conn *conn, u8_t err) {
+    security_established = false;
     const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
     if (err) {
@@ -279,9 +282,10 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
  */
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
                                 enum bt_security_err err) {
-    if (conn == default_conn) {
+    if (!security_established && conn == default_conn) {
         LOG_DBG("Security changed: level %u", level);
         if (err == 0 && level == 4 && bt_conn_enc_key_size(conn) == 16) {
+            security_established = true;
             LOG_DBG("Starting Discovery...");
             memcpy(&uuid_128, UUID_AUTH_SERVICE, sizeof(uuid_128));
             discover_params.uuid = &uuid_128.uuid;
