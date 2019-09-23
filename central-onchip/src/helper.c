@@ -250,10 +250,10 @@ static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv
         return ret;
     }
     LOG_DBG("valid IRK");
-    settings_save_one("bt/irk", irk, sizeof(irk));
     settings_save_one("bt/id", &addr, sizeof(bt_addr_le_t));
-    settings_load_subtree("bt/irk");
+    settings_save_one("bt/irk", irk, sizeof(irk));
     settings_load_subtree("bt/id");
+    settings_load_subtree("bt/irk");
     shell_info(shell, "done");
     return 0;
 }
