@@ -165,8 +165,8 @@ if __name__ == '__main__':
     append_id(coin_line(p_addr, p_irk, ltk, spacekey))
 
     # create defines file
-    with open("../factory-bonding-onchip/src/main.h", "w") as f:
-        f.write(periph_defines(p_addr, p_irk, c_addr, c_irk, ltk, spacekey))
+    # with open("../factory-bonding-onchip/src/main.h", "w") as f:
+    #     f.write(periph_defines(p_addr, p_irk, c_addr, c_irk, ltk, spacekey))
 
     # create storage partition
     storage_bytes = periph_storage_partition(p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # create merged hex file for easy programming
     storage = IntelHex()
     storage[0x32000:0x38000] = list(storage_bytes)
-    storage.tofile("storage_%s.hex" % addr_string, format="hex")
+    # storage.tofile("storage_%s.hex" % addr_string, format="hex")
     coin = IntelHex("coin.hex")
     coin.merge(storage, overlap="replace")
     coin[0x10001208:0x10001208 + 4] = [0x00] * 4  # enable Access Port Protection
