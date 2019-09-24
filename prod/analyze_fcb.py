@@ -27,11 +27,15 @@ def read_items(storage):
     print('FD ID: %u' % (storage[6] + storage[7] << 8))
     off = 8
     while off < len(storage) and storage[off] != 0xFF:
-        length = storage[off]
-        data_end = off + 1 + length
+        if storage[off] & 0x80:
+            length = (storage[off] & 0x7f) | (storage[off + 1] << 7)
+            data_end = off + 2 + length
+        else:
+            length = storage[off]
+            data_end = off + 1 + length
         data = storage[off + 1: data_end]
         crc = storage[data_end]
-        if crc == fcb_crc8(storage[off: data_end]):
+        if crc == fcb_crc8(storage[off:data_end]):
             items.append(data)
         else:
             print('CRC check failed!')

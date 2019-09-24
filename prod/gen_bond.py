@@ -60,7 +60,11 @@ def fcb_crc8(data):
 
 # generate FCB storage item from data
 def gen_storage_item(data):
-    data_w_len = bytes([len(data)]) + data
+    assert len(data) < 0x4000
+    if len(data) < 0x80:
+        data_w_len = bytes([len(data)]) + data
+    else:
+        data_w_len = bytes([(len(data) & 0x7f) | 0x80, len(data) >> 7]) + data
     return data_w_len + bytes([fcb_crc8(data_w_len)])
 
 
