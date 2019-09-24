@@ -241,10 +241,12 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
         LOG_ERR("Failed to connect to [%02X:%02X:%02X:%02X:%02X:%02X] (%u)",
                 addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
                 addr->a.val[1], addr->a.val[0], err);
-        if (conn == default_conn) {
+      
+        if (default_conn) {
             bt_conn_unref(default_conn);
-            default_conn = NULL;
         }
+        default_conn = NULL;
+      
         int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
         if (error) {
             LOG_ERR("Scanning failed to start (err %d)", error);
