@@ -30,7 +30,7 @@ The peripherals shut down when a connection to them is cancelled. They start up 
 Both peripherals and the central kill the connection after a short timeout (5s).
 
 ## How to use?
-1. Install CMake, Python 3 and the Zephyr SDK at the standard location (`/opt/zephyr-sdk/`)
+1. Install CMake, Python 3 and the Zephyr SDK (0.10.3) at the standard location (`/opt/zephyr-sdk/`)
 2. Go into the `prod/` folder and run the `./bootstrap.sh` script.
 3. Run `make` to build the projects.
 4. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate a hex-file for the specific coin containing the keys (e.g. `coin_d33efc87ed2e.hex`). Every coin gets a line in `coins.txt`.
