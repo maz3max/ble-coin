@@ -83,7 +83,7 @@ static void connected(struct bt_conn *conn, u8_t err) {
         int ret = bt_conn_set_security(conn, BT_SECURITY_L4);
         if (ret) {
             LOG_ERR("Kill connection: insufficient security %i", ret);
-            bt_conn_disconnect(conn, BT_HCI_ERR_INSUFFICIENT_SECURITY);
+            bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
         } else {
             LOG_INF("bt_conn_security successful");
         }
