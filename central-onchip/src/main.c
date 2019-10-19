@@ -376,6 +376,7 @@ static u8_t discover_func(struct bt_conn *conn,
             if (err && err != -EALREADY) {
                 LOG_ERR("Subscribe failed (err %d)", err);
                 bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+                return BT_GATT_ITER_STOP;
             } else {
                 LOG_DBG("[SUBSCRIBED]");
             }
@@ -384,7 +385,10 @@ static u8_t discover_func(struct bt_conn *conn,
             (void) memset(params, 0, sizeof(*params));
 
             LOG_DBG("Generating new challenge");
-            bt_rand(challenge, 64);
+            if (bt_rand(challenge, 64) != 0) {
+                bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+                return BT_GATT_ITER_STOP;
+            }
             LOG_DBG("Writing challenge");
             write_params.func = write_func;
             write_params.handle = auth_challenge_chr_value_handle;
@@ -482,6 +486,9 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
                     bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
                     return BT_GATT_ITER_STOP;
                 }
+            } else {
+                bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+                return BT_GATT_ITER_STOP;
             }
         }
     }
