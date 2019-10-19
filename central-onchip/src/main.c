@@ -111,14 +111,16 @@ static void watchdog_timer_expiry_function(struct k_timer *timer_id) {
 }
 
 // helper function for advertisement data parser
+const static size_t BT_ADV_BLVL_IDX = 2;
+
 bool ad_parse_func(struct bt_data *data, void *user_data) {
     int16_t *batt = user_data;
     if (data->type == BT_DATA_SVC_DATA16) {
-        // check if this is service data for this battery service (uuid = 0x180f)
+        // check if this is service data for this battery service (uuid = 0x180f, one byte of data)
         if (data->data_len != 3 || data->data[0] != 0x0f || data->data[1] != 0x18) {
             return true;
         }
-        *batt = data->data[2];
+        *batt = data->data[BT_ADV_BLVL_IDX];
         return false; // stop parsing, found what we wanted
     }
     return true;
