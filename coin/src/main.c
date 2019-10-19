@@ -43,6 +43,12 @@ static const struct bt_data ad[] = {
         BT_DATA(BT_DATA_SVC_DATA16, batt_adv_bytes, sizeof(batt_adv_bytes))
 };
 
+static void bt_ready(int err);
+
+static void connected(struct bt_conn *conn, u8_t err);
+
+static void disconnected(struct bt_conn *conn, u8_t reason);
+
 /**
  * gets called when the BLE stack is initialized
  * @param err error while initializing
@@ -70,6 +76,7 @@ static void connected(struct bt_conn *conn, u8_t err) {
     } else {
         if (default_conn) {
             bt_conn_unref(default_conn);
+            disconnected(NULL, 0);
         }
         default_conn = bt_conn_ref(conn);
         LOG_INF("connected");
