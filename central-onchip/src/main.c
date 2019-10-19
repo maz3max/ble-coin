@@ -25,8 +25,8 @@ static struct bt_conn *default_conn = NULL;
 #define UUID_AUTH_RESPONSE     BT_UUID_DECLARE_128(0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95, \
                                                    0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f)
 
-static struct bt_uuid_16 uuid_16 = {0};
-static struct bt_uuid_128 uuid_128 = {0};
+static struct bt_uuid_16 uuid_16 = {{0}};
+static struct bt_uuid_128 uuid_128 = {{0}};
 
 
 // save slots for discovered GATT handles
@@ -67,11 +67,11 @@ static void disconnected_cb(struct bt_conn *conn, u8_t reason);
 // switch to prevent the discovery to be started twice
 static bool security_established = false;
 // params for read_completed_func
-static struct bt_gatt_read_params read_params;
+static struct bt_gatt_read_params read_params = {{{0}}};
 // params for write_completed_func
-static struct bt_gatt_write_params write_params;
+static struct bt_gatt_write_params write_params = {{{0}}};
 // params for discover_func
-static struct bt_gatt_discover_params discover_params = {0};
+static struct bt_gatt_discover_params discover_params = {{{0}}};
 // params for bt_gatt_subscribe
 static struct bt_gatt_subscribe_params subscribe_params = {
         .value = BT_GATT_CCC_INDICATE,
@@ -84,7 +84,7 @@ static struct bt_conn_cb conn_callbacks = {
         .security_changed = security_changed_cb,
 };
 
-static struct k_delayed_work timeout_timer;
+static struct k_delayed_work timeout_timer = {{0}};
 
 // timeout function to kill connections that take too long
 static void timeout(struct k_work *work) {

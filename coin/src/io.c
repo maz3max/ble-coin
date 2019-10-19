@@ -9,11 +9,11 @@ LOG_MODULE_REGISTER(io);
 #define LED DT_ALIAS_LED0_GPIOS_PIN
 #define BTN DT_ALIAS_SW0_GPIOS_PIN
 
-static struct gpio_callback btn_cb = {0};
+static struct gpio_callback btn_cb = {{0}};
 
 static struct device *dev = NULL;
 
-struct k_timer blink_timer = {0};
+struct k_timer blink_timer = {{{{0}}}};
 
 static const int aggressive_blink_ms = 125;
 static const int quick_blink_ms = 250;
