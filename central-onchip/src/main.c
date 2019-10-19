@@ -18,9 +18,12 @@ LOG_MODULE_REGISTER(app);
 static struct bt_conn *default_conn = NULL;
 
 // library of UUIDs
-#define UUID_AUTH_SERVICE    BT_UUID_DECLARE_128(0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b, 0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66)
-#define UUID_AUTH_CHALLENGE    BT_UUID_DECLARE_128(0xd5, 0x12, 0x7b, 0x77, 0xce, 0xba, 0xa7, 0xb1, 0x86, 0x9a, 0x90, 0x47, 0x02, 0xc9, 0x3d, 0x95)
-#define UUID_AUTH_RESPONSE    BT_UUID_DECLARE_128(0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95, 0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f)
+#define UUID_AUTH_SERVICE      BT_UUID_DECLARE_128(0xee, 0x8a, 0xcb, 0x07, 0x8d, 0xe1, 0xfc, 0x3b, \
+                                                   0xfe, 0x8e, 0x69, 0x22, 0x41, 0xbe, 0x87, 0x66)
+#define UUID_AUTH_CHALLENGE    BT_UUID_DECLARE_128(0xd5, 0x12, 0x7b, 0x77, 0xce, 0xba, 0xa7, 0xb1, \
+                                                   0x86, 0x9a, 0x90, 0x47, 0x02, 0xc9, 0x3d, 0x95)
+#define UUID_AUTH_RESPONSE     BT_UUID_DECLARE_128(0x06, 0x3f, 0x0b, 0x51, 0xbf, 0x48, 0x4f, 0x95, \
+                                                   0x92, 0xd7, 0x28, 0x5c, 0xd6, 0xfd, 0xd2, 0x2f)
 
 static struct bt_uuid_16 uuid_16 = {0};
 static struct bt_uuid_128 uuid_128 = {0};
@@ -187,9 +190,9 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
     }
     LOG_INF("Device found: [%02X:%02X:%02X:%02X:%02X:%02X] (RSSI %d) (TYPE %u) "
             "(BONDED %u)",
-            addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
-            addr->a.val[1], addr->a.val[0], rssi, type,
-            bt_addr_le_is_bonded(BT_ID_DEFAULT, addr));
+            addr->a.val[5], addr->a.val[4], addr->a.val[3],
+            addr->a.val[2], addr->a.val[1], addr->a.val[0],
+            rssi, type, bt_addr_le_is_bonded(BT_ID_DEFAULT, addr));
 
     /* We're only interested in directed connectable events from bonded devices*/
     if ((type != BT_LE_ADV_DIRECT_IND && type != BT_LE_ADV_IND) ||
@@ -240,8 +243,9 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
 
     if (err) {
         LOG_ERR("Failed to connect to [%02X:%02X:%02X:%02X:%02X:%02X] (%u)",
-                addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
-                addr->a.val[1], addr->a.val[0], err);
+                addr->a.val[5], addr->a.val[4], addr->a.val[3],
+                addr->a.val[2], addr->a.val[1], addr->a.val[0],
+                err);
 
         if (default_conn) {
             bt_conn_unref(default_conn);
@@ -264,9 +268,9 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
     // set up timeout
     k_delayed_work_submit(&timeout_timer, K_SECONDS(5));
 
-    LOG_INF("Connected: [%02X:%02X:%02X:%02X:%02X:%02X]", addr->a.val[5],
-            addr->a.val[4], addr->a.val[3], addr->a.val[2], addr->a.val[1],
-            addr->a.val[0]);
+    LOG_INF("Connected: [%02X:%02X:%02X:%02X:%02X:%02X]",
+            addr->a.val[5], addr->a.val[4], addr->a.val[3],
+            addr->a.val[2], addr->a.val[1], addr->a.val[0]);
 
     int ret = bt_conn_set_security(conn, BT_SECURITY_L4);
     if (ret) {
@@ -502,8 +506,9 @@ static void disconnected_cb(struct bt_conn *conn, u8_t reason) {
         return;
     }
     LOG_INF("Disconnected: [%02X:%02X:%02X:%02X:%02X:%02X] (reason %u)",
-            addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
-            addr->a.val[1], addr->a.val[0], reason);
+            addr->a.val[5], addr->a.val[4], addr->a.val[3],
+            addr->a.val[2], addr->a.val[1], addr->a.val[0],
+            reason);
 
     k_delayed_work_cancel(&timeout_timer);
 

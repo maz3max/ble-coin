@@ -85,7 +85,7 @@ static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                          void *buf, u16_t len, u16_t offset) {
     battery = get_batt_percentage();
 
-    const char *value = attr->user_data;
+    const char *value = &battery;
 
     return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
                              sizeof(*value));
