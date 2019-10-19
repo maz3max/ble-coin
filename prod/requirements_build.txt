@@ -1,0 +1,4 @@
+cmake>=3.13.1
+ninja
+west
+intelhex
