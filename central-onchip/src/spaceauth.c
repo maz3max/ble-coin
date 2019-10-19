@@ -8,12 +8,9 @@
 
 LOG_MODULE_REGISTER(space);
 
-
 #include "blake2.h"
 
 static spacekey_t keys[CONFIG_BT_MAX_PAIRED] = {{{0}}};
-
-static spacekey_t keys[CONFIG_BT_MAX_PAIRED] = {0};
 static const bt_addr_t NO_ADDR = {0};
 static size_t largest_index_used = 0;
 

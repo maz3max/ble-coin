@@ -132,7 +132,6 @@ static void shutdown(struct k_work *work) {
 }
 
 void main(void) {
-
     // set shutdown timer
     k_delayed_work_init(&shutdown_timer, shutdown);
     k_delayed_work_submit(&shutdown_timer, K_SECONDS(10));

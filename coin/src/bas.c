@@ -100,7 +100,7 @@ BT_GATT_SERVICE_DEFINE(bas_svc,
                                               BT_GATT_PERM_READ, read_blvl, NULL, &battery),
 );
 
-uint8_t bas_init(){
+uint8_t bas_init() {
     LOG_INF("initialize battery service");
     init_adc();
     battery = get_batt_percentage();
