@@ -17,9 +17,10 @@ static size_t largest_index_used = 0;
 void spacekeys_print(const struct shell *shell) {
     for (size_t i = 0; i <= largest_index_used; ++i) {
         if (bt_addr_cmp(&NO_ADDR, &keys[i].addr.a) != 0) {
-            shell_print(shell, "[%02X:%02X:%02X:%02X:%02X:%02X] : %02X...", keys[i].addr.a.val[5],
-                        keys[i].addr.a.val[4], keys[i].addr.a.val[3], keys[i].addr.a.val[2], keys[i].addr.a.val[1],
-                        keys[i].addr.a.val[0], keys[i].key[0]);
+            shell_print(shell, "[%02X:%02X:%02X:%02X:%02X:%02X] : %02X...",
+                        keys[i].addr.a.val[5], keys[i].addr.a.val[4], keys[i].addr.a.val[3],
+                        keys[i].addr.a.val[2], keys[i].addr.a.val[1], keys[i].addr.a.val[0],
+                        keys[i].key[0]);
         }
     }
 }
