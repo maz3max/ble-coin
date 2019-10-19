@@ -12,9 +12,6 @@ LOG_MODULE_REGISTER(space);
 #include "blake2.h"
 
 
-#ifndef CONFIG_BT_MAX_PAIRED
-#define CONFIG_BT_MAX_PAIRED -1
-#endif
 
 static spacekey_t keys[CONFIG_BT_MAX_PAIRED] = {0};
 static const bt_addr_t NO_ADDR = {0};
@@ -42,7 +39,7 @@ static int space_settings_decode_key(const char *key, bt_addr_le_t *addr) {
     for (size_t i = 0; i < 6; ++i) {
         char buf[] = {key[2 * i], key[2 * i + 1], 0};
         if (isxdigit(buf[0]) && isxdigit(buf[1])) {
-            addr->a.val[5 - i] = strtol(buf, NULL, 16);
+            addr->a.val[5 - i] = (u8_t) strtol(buf, NULL, 16);
         } else {
             LOG_ERR("invalid hex string");
             return -EINVAL;

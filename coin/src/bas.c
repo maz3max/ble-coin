@@ -74,10 +74,11 @@ static u8_t get_batt_percentage() {
 
     LOG_INF("read ADC val: %i", val);
 
-    float batt_percentage_f = 0.35156249999999997 * val - 200;
+    float batt_percentage_f = 0.3515625f * (float) val - 200;
     u8_t batt_percentage =
-            batt_percentage_f < 0 ? 0
-                                  : batt_percentage_f > 100 ? 100 : batt_percentage_f;
+            batt_percentage_f < 0 ? 0 :
+            batt_percentage_f > 100 ? 100 :
+            (u8_t) batt_percentage_f;
     return batt_percentage;
 }
 
@@ -85,7 +86,7 @@ static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                          void *buf, u16_t len, u16_t offset) {
     battery = get_batt_percentage();
 
-    const char *value = &battery;
+    const char *value = (const char *) &battery;
 
     return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
                              sizeof(*value));

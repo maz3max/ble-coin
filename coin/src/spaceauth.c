@@ -26,7 +26,7 @@ static uint8_t auth_key[BLAKE2S_KEYBYTES] = {0};
 static uint8_t challenge[BLAKE2S_BLOCKBYTES] = {0};
 static uint8_t response[BLAKE2S_OUTBYTES] = {0};
 
-static u8_t ccc_value;
+static u16_t ccc_value;
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value) {
     ccc_value = value;
@@ -97,10 +97,10 @@ static ssize_t write_challenge(struct bt_conn *conn,
 //settings stuff
 static int set(const char *key, size_t len_rd,
                settings_read_cb read_cb, void *cb_arg) {
-    int key_len;
+    ARG_UNUSED(len_rd);
     const char *next;
 
-    key_len = settings_name_next(key, &next);
+    size_t key_len = (size_t) settings_name_next(key, &next);
     if (!next) {
         if (!strncmp(key, "key", key_len)) {
             ssize_t len = read_cb(cb_arg, auth_key, BLAKE2S_KEYBYTES);

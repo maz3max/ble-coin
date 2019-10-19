@@ -32,7 +32,7 @@ int parse_addr(const char *addr, bt_addr_le_t *result) {
             size_t off = 3 * i;
             char buf[3] = {addr[off], addr[off + 1], 0};
             if (isxdigit(buf[0]) && isxdigit(buf[1])) {
-                result->a.val[5 - i] = strtol(buf, NULL, 16);
+                result->a.val[5 - i] = (u8_t) strtol(buf, NULL, 16);
             } else {
                 LOG_ERR("invalid address");
                 return -EINVAL;
@@ -52,7 +52,7 @@ int parse_hex(const char *str, size_t n, uint8_t *out) {
     for (size_t i = 0; i < n; ++i) {
         char buf[] = {str[2 * i], str[2 * i + 1], 0};
         if (isxdigit(buf[0]) && isxdigit(buf[1])) {
-            out[i] = strtol(buf, NULL, 16);
+            out[i] = (u8_t) strtol(buf, NULL, 16);
         } else {
             LOG_ERR("invalid hex string");
             return -EINVAL;

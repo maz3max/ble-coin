@@ -301,9 +301,9 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
             discover_params.start_handle = 0x0001;
             discover_params.end_handle = 0xffff;
 
-            int err = bt_gatt_discover(conn, &discover_params);
-            if (err) {
-                LOG_ERR("Discover failed(err %d)", err);
+            int discover_err = bt_gatt_discover(conn, &discover_params);
+            if (discover_err) {
+                LOG_ERR("Discover failed(err %d)", discover_err);
                 return;
             }
         }
