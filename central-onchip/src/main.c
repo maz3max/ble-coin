@@ -47,6 +47,9 @@ static void connected_cb(struct bt_conn *conn, u8_t err);
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
                                 enum bt_security_err err);
 
+static void gatt_exchange_mtu_completed(struct bt_conn *conn, u8_t err,
+                                        struct bt_gatt_exchange_params *params);
+
 static u8_t discover_func(struct bt_conn *conn,
                           const struct bt_gatt_attr *attr,
                           struct bt_gatt_discover_params *params);
@@ -74,6 +77,8 @@ static struct bt_gatt_write_params write_params = {{{0}}};
 static struct bt_gatt_discover_params discover_params = {{{0}}};
 // params for bt_gatt_subscribe
 static struct bt_gatt_subscribe_params subscribe_params = {{{0}}};
+// params for bt_gatt_exchange_mtu
+static struct bt_gatt_exchange_params gatt_exchange_params = {{{0}}};
 // collection of conn callbacks
 static struct bt_conn_cb conn_callbacks = {
         .connected = connected_cb,
@@ -287,7 +292,6 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
 
 /**
  * gets called when the security level changes
- * only used for debugging
  * @param conn current connection
  * @param level new security level
  */
@@ -297,20 +301,36 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
         LOG_DBG("Security changed: level %u", level);
         if (err == 0 && level == 4 && bt_conn_enc_key_size(conn) == 16) {
             security_established = true;
-            LOG_DBG("Starting Discovery...");
-            memcpy(&uuid_128, UUID_AUTH_SERVICE, sizeof(uuid_128));
-            discover_params.uuid = &uuid_128.uuid;
-            discover_params.func = discover_func;
-            discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-            discover_params.start_handle = 0x0001;
-            discover_params.end_handle = 0xffff;
-
-            int discover_err = bt_gatt_discover(conn, &discover_params);
-            if (discover_err) {
-                LOG_ERR("Discover failed(err %d)", discover_err);
-                return;
-            }
+            gatt_exchange_params.func = gatt_exchange_mtu_completed;
+            bt_gatt_exchange_mtu(conn, &gatt_exchange_params);
         }
+    }
+}
+
+/**
+ * gets called when exchanging the maximum GATT MTU is completed
+ * no check for error because MTU size is not critical
+ * starts discovery
+ */
+static void gatt_exchange_mtu_completed(struct bt_conn *conn, u8_t err,
+                                        struct bt_gatt_exchange_params *params) {
+    ARG_UNUSED(err);
+    (void) memset(&params, 0, sizeof(params));
+    u16_t mtu = bt_gatt_get_mtu(conn);
+    LOG_INF("Using GATT MTU of %u", mtu);
+
+    LOG_DBG("Starting Discovery...");
+    memcpy(&uuid_128, UUID_AUTH_SERVICE, sizeof(uuid_128));
+    discover_params.uuid = &uuid_128.uuid;
+    discover_params.func = discover_func;
+    discover_params.type = BT_GATT_DISCOVER_PRIMARY;
+    discover_params.start_handle = 0x0001;
+    discover_params.end_handle = 0xffff;
+
+    int discover_err = bt_gatt_discover(conn, &discover_params);
+    if (discover_err) {
+        LOG_ERR("Discover failed(err %d)", discover_err);
+        return;
     }
 }
 
