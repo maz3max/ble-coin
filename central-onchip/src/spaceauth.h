@@ -48,6 +48,12 @@ int spacekey_del(const bt_addr_le_t *addr);
 int spaceauth_validate(const bt_addr_le_t *addr, const uint8_t *challenge, const uint8_t *response);
 
 /**
+ * Notify helper functions that BLE stack is running.
+ * (disables write-commands to settings)
+ */
+void helper_ble_running();
+
+/**
  * Initialize spaceauth settings handler.
  */
 void spaceauth_init();

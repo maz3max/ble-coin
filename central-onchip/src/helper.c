@@ -15,6 +15,8 @@
 
 LOG_MODULE_REGISTER(helper);
 
+static bool ble_stack_running = false;
+
 int parse_addr(const char *addr, bt_addr_le_t *result) {
     if (strlen(addr) != 17) {
         LOG_ERR("wrong address length");
@@ -66,6 +68,10 @@ int parse_hex(const char *str, size_t n, uint8_t *out) {
  * command to load settings from storage
  */
 static int cmd_settings_load(const struct shell *shell, size_t argc, char **argv) {
+    if (ble_stack_running) {
+        shell_error(shell, "BLE stack already running!");
+        return -1;
+    }
     settings_load();
     shell_info(shell, "done");
     return 0;
@@ -75,13 +81,18 @@ static int cmd_settings_load(const struct shell *shell, size_t argc, char **argv
  * command to clear storage
  */
 static int cmd_settings_clear(const struct shell *shell, size_t argc, char **argv) {
+    if (ble_stack_running) {
+        shell_error(shell, "BLE stack already running!");
+        return -1;
+    }
     const struct flash_area *fap;
     flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
     int rc = flash_area_erase(fap, 0, fap->fa_size);
     if (rc != 0) {
         shell_error(shell, "cannot get flash area");
     }
-    shell_info(shell, "Storage cleared, please reboot. No, loading does not suffice.");
+    shell_info(shell, "Storage cleared, rebooting.");
+    sys_reboot(SYS_REBOOT_COLD);
     return 0;
 }
 
@@ -109,6 +120,10 @@ SHELL_CMD_REGISTER(reboot, NULL, "perform cold system reboot", cmd_reboot);
  * can fail on invalid input or full buffer
  */
 static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
+    if (ble_stack_running) {
+        shell_error(shell, "BLE stack already running!");
+        return -1;
+    }
     struct bt_keys keys = {
             .keys = (BT_KEYS_IRK | BT_KEYS_LTK_P256),
             .flags = (BT_KEYS_AUTHENTICATED | BT_KEYS_SC),
@@ -168,6 +183,10 @@ static int cmd_coin_add(const struct shell *shell, size_t argc, char **argv) {
  * command to delete a coin by specifying its address
  */
 static int cmd_coin_del(const struct shell *shell, size_t argc, char **argv) {
+    if (ble_stack_running) {
+        shell_error(shell, "BLE stack already running!");
+        return -1;
+    }
     bt_addr_le_t addr;
     if (argc != 2) {
         shell_error(shell, "incorrect number of arguments");
@@ -236,6 +255,10 @@ SHELL_CMD_REGISTER(stats, &sub_stats, "commands to print internal state", NULL);
  * command to set addr and IRK of central
  */
 static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv) {
+    if (ble_stack_running) {
+        shell_error(shell, "BLE stack already running!");
+        return -1;
+    }
     bt_addr_le_t addr;
     int ret = parse_addr(argv[1], &addr);
     if (ret) {
@@ -259,3 +282,7 @@ static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv
 }
 
 SHELL_CMD_REGISTER(central_setup, NULL, "usage: central_setup <addr> <irk>", cmd_central_setup);
+
+void helper_ble_running() {
+    ble_stack_running = true;
+}

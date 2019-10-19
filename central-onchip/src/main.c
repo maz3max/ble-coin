@@ -129,6 +129,7 @@ bool ad_parse_func(struct bt_data *data, void *user_data) {
  * @return 0 on success, else error code of bt_enable
  */
 static int cmd_ble_start(const struct shell *shell, size_t argc, char **argv) {
+    helper_ble_running();
     int err = bt_enable(bt_ready_cb);
     if (err) {
         LOG_ERR("Bluetooth init failed (err %d)", err);
@@ -241,12 +242,12 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
         LOG_ERR("Failed to connect to [%02X:%02X:%02X:%02X:%02X:%02X] (%u)",
                 addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
                 addr->a.val[1], addr->a.val[0], err);
-      
+
         if (default_conn) {
             bt_conn_unref(default_conn);
         }
         default_conn = NULL;
-      
+
         int error = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
         if (error) {
             LOG_ERR("Scanning failed to start (err %d)", error);
