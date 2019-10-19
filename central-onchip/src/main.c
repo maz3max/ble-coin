@@ -51,24 +51,24 @@ static u8_t discover_func(struct bt_conn *conn,
                           const struct bt_gatt_attr *attr,
                           struct bt_gatt_discover_params *params);
 
-static void write_func(struct bt_conn *conn, u8_t err,
-                       struct bt_gatt_write_params *params);
+static void write_completed_func(struct bt_conn *conn, u8_t err,
+                                 struct bt_gatt_write_params *params);
 
 static u8_t notify_func(struct bt_conn *conn,
                         struct bt_gatt_subscribe_params *params,
                         const void *data, u16_t length);
 
-static u8_t read_func(struct bt_conn *conn, u8_t err,
-                      struct bt_gatt_read_params *params,
-                      const void *data, u16_t length);
+static u8_t read_completed_func(struct bt_conn *conn, u8_t err,
+                                struct bt_gatt_read_params *params,
+                                const void *data, u16_t length);
 
 static void disconnected_cb(struct bt_conn *conn, u8_t reason);
 
 // switch to prevent the discovery to be started twice
 static bool security_established = false;
-// params for read_func
+// params for read_completed_func
 static struct bt_gatt_read_params read_params;
-// params for write_func
+// params for write_completed_func
 static struct bt_gatt_write_params write_params;
 // params for discover_func
 static struct bt_gatt_discover_params discover_params = {0};
@@ -390,7 +390,7 @@ static u8_t discover_func(struct bt_conn *conn,
                 return BT_GATT_ITER_STOP;
             }
             LOG_DBG("Writing challenge");
-            write_params.func = write_func;
+            write_params.func = write_completed_func;
             write_params.handle = auth_challenge_chr_value_handle;
             write_params.length = 64;
             write_params.data = challenge;
@@ -412,8 +412,8 @@ static u8_t discover_func(struct bt_conn *conn,
  * @param err error while writing
  * @param params given write params
  */
-static void write_func(struct bt_conn *conn, u8_t err,
-                       struct bt_gatt_write_params *params) {
+static void write_completed_func(struct bt_conn *conn, u8_t err,
+                                 struct bt_gatt_write_params *params) {
     LOG_DBG("Write complete: err %u", err);
     (void) memset(&write_params, 0, sizeof(write_params));
 }
@@ -442,7 +442,7 @@ static u8_t notify_func(struct bt_conn *conn,
         LOG_INF("Coin notified that response is ready.");
         memcpy(response, data, length);
         if (length < sizeof(response)) {
-            read_params.func = read_func;
+            read_params.func = read_completed_func;
             read_params.handle_count = 1;
             read_params.single.offset = 0;
             read_params.single.handle = auth_response_chr_value_handle;
@@ -466,9 +466,9 @@ static u8_t notify_func(struct bt_conn *conn,
  * @param length length of data
  * @return BT_GATT_ITER_STOP when finished reading, else BT_GATT_ITER_CONTINUE
  */
-static u8_t read_func(struct bt_conn *conn, u8_t err,
-                      struct bt_gatt_read_params *params,
-                      const void *data, u16_t length) {
+static u8_t read_completed_func(struct bt_conn *conn, u8_t err,
+                                struct bt_gatt_read_params *params,
+                                const void *data, u16_t length) {
     if (data) {
         LOG_DBG("Read complete: err %u length %u offset %u", err, length, params->single.offset);
         LOG_HEXDUMP_DBG(data, length, "Received data");
