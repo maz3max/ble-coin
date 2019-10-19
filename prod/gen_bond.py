@@ -7,23 +7,10 @@ import binascii
 from intelhex import IntelHex
 
 
-# generate C-Style definition of a byte string
-def byte_str_to_c_def(s):
-    hex_arr = ["0x%02x" % b for b in s]
-    return "{ " + ", ".join(hex_arr) + " }"
-
-
 # generate human-readable colon-separated BLE address string
 def addr_to_str(addr):
     hex_arr = ["%02X" % b for b in addr[::-1]]
     return ":".join(hex_arr)
-
-
-# generate C-Style definition of an BLE address struct (zephyr-specific)
-def addr_to_c_def(addr, addr_type="random"):
-    t = "BT_ADDR_LE_RANDOM" if addr_type == "random" else "BT_ADDR_LE_PUBLIC"
-    a_str = byte_str_to_c_def(addr)
-    return "{ .type = %s, .a = %s }" % (t, a_str)
 
 
 # generate a full coin line for coins.txt containing address, IRK, LTK and SPACEKEY
@@ -32,18 +19,6 @@ def coin_line(periph_addr, periph_irk, ltk, spacekey):
         addr_to_str(periph_addr), periph_irk.hex().upper(),  # ID of coin
         ltk.hex().upper(),  # LTK
         spacekey.hex().upper())  # spacekey
-
-
-# generate contents of main.h including all config data for a coin
-def periph_defines(periph_addr, periph_irk, central_addr, central_irk, ltk,
-                   spacekey):
-    string = "#define INSERT_CENTRAL_ADDR_HERE %s\n" % addr_to_c_def(central_addr)
-    string += "#define INSERT_CENTRAL_IRK_HERE %s\n" % byte_str_to_c_def(central_irk)
-    string += "#define INSERT_PERIPH_ADDR_HERE %s\n" % addr_to_c_def(periph_addr)
-    string += "#define INSERT_PERIPH_IRK_HERE %s\n" % byte_str_to_c_def(periph_irk)
-    string += "#define INSERT_LTK_HERE %s\n" % byte_str_to_c_def(ltk)
-    string += "#define INSERT_SPACEKEY_HERE %s\n" % byte_str_to_c_def(spacekey)
-    return string
 
 
 # CRC-8-CCITT with initial value 0xFF: checksum used in FCB
@@ -82,7 +57,7 @@ def periph_storage_partition(periph_addr, periph_irk, central_addr, central_irk,
            gen_storage_item(bt_irk) + \
            gen_storage_item(bt_keys) + \
            gen_storage_item(space_key)
-    return data + b'\xff' * (0x6000 - len(data)) # partition length from DTS
+    return data + b'\xff' * (0x6000 - len(data))  # partition length from DTS
 
 
 def central_storage_partition(central_addr, central_irk):
@@ -192,10 +167,6 @@ if __name__ == '__main__':
     # write coin line
     append_id(coin_line(p_addr, p_irk, ltk, spacekey))
 
-    # create defines file
-    # with open("../factory-bonding-onchip/src/main.h", "w") as f:
-    #     f.write(periph_defines(p_addr, p_irk, c_addr, c_irk, ltk, spacekey))
-
     # create storage partition
     storage_bytes = periph_storage_partition(p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
 
@@ -203,7 +174,7 @@ if __name__ == '__main__':
 
     # create merged hex file for easy programming
     storage = IntelHex()
-    storage[0x32000:0x38000] = list(storage_bytes) # partition address from DTS
+    storage[0x32000:0x38000] = list(storage_bytes)  # partition address from DTS
     # storage.tofile("storage_%s.hex" % addr_string, format="hex")
     coin = IntelHex("coin.hex")
     coin.merge(storage, overlap="replace")
