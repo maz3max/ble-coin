@@ -85,6 +85,30 @@ def periph_storage_partition(periph_addr, periph_irk, central_addr, central_irk,
     return data + b'\xff' * (0x6000 - len(data))
 
 
+def central_storage_partition(central_addr, central_irk):
+    magic_header = b'\xee\xee\xff\xc0\x01\xff\x00\x00'
+    bt_id = b'bt/id=\x01' + bytes(central_addr)
+    bt_irk = b'bt/irk=' + bytes(central_irk)
+    data = magic_header + \
+           gen_storage_item(bt_id) + \
+           gen_storage_item(bt_irk)
+    return data + b'\xff' * (0x4000 - len(data))
+
+
+def prepare_central_hex(central_addr, central_irk, path="central.hex"):
+    dir = os.path.dirname(path)
+    addr_string = binascii.hexlify(central_addr[::-1]).decode()
+    file_name = os.path.join(dir, "central_%s.hex" % addr_string)
+    if os.path.exists(file_name):
+        return
+    storage_bytes = central_storage_partition(central_addr, central_irk)
+    storage = IntelHex()
+    storage[0xcc000:0xd0000] = list(storage_bytes)
+    central = IntelHex(path)
+    central.merge(storage, overlap="replace")
+    central.tofile(file_name, format="hex")
+
+
 # regex to parse address and IRK
 id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
 
@@ -186,3 +210,4 @@ if __name__ == '__main__':
     coin[0x10001208:0x10001208 + 4] = [0x00] * 4  # enable Access Port Protection
     coin.tofile("coin_%s.hex" % addr_string, format="hex")
 
+    prepare_central_hex(c_addr, c_irk)
