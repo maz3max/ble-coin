@@ -73,10 +73,7 @@ static struct bt_gatt_write_params write_params = {{{0}}};
 // params for discover_func
 static struct bt_gatt_discover_params discover_params = {{{0}}};
 // params for bt_gatt_subscribe
-static struct bt_gatt_subscribe_params subscribe_params = {
-        .value = BT_GATT_CCC_INDICATE,
-        .notify = notify_func,
-};
+static struct bt_gatt_subscribe_params subscribe_params = {{{0}}};
 // collection of conn callbacks
 static struct bt_conn_cb conn_callbacks = {
         .connected = connected_cb,
@@ -378,6 +375,8 @@ static u8_t discover_func(struct bt_conn *conn,
         } else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
             LOG_DBG("found auth response chr cccd handle %u", attr->handle);
             subscribe_params.ccc_handle = attr->handle;
+            subscribe_params.value = BT_GATT_CCC_INDICATE;
+            subscribe_params.notify = notify_func;
 
             err = bt_gatt_subscribe(default_conn, &subscribe_params);
             if (err && err != -EALREADY) {
@@ -480,6 +479,7 @@ static u8_t notify_func(struct bt_conn *conn,
             }
         } else {
             check_response(conn);
+            (void) memset(&params, 0, sizeof(params));
             return BT_GATT_ITER_STOP;
         }
     }
