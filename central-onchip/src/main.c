@@ -428,6 +428,23 @@ static void write_completed_func(struct bt_conn *conn, u8_t err,
 }
 
 /**
+ * check if current response is valid
+ * critical section!
+ * cleans up and disconnects afterwards.
+ * @param conn current connection
+ */
+static void check_response(struct bt_conn *conn) {
+    if (spaceauth_validate(bt_conn_get_dst(conn), challenge, response) == 0) {
+        LOG_INF("KEY AUTHENTICATED. OPEN DOOR PLEASE.");
+        led0_set(1);
+        led1_set(1, 1, 1);
+    }
+    (void) memset(challenge, 0, sizeof(challenge));
+    (void) memset(response, 0, sizeof(response));
+    bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+}
+
+/**
  * gets called when the peripheral notifies that the response is ready
  * starts reading the response
  * @param conn current connection
@@ -454,13 +471,16 @@ static u8_t notify_func(struct bt_conn *conn,
         if (length < sizeof(response)) {
             read_params.func = read_completed_func;
             read_params.handle_count = 1;
-            read_params.single.offset = 0;
+            read_params.single.offset = length;
             read_params.single.handle = auth_response_chr_value_handle;
             int err = bt_gatt_read(default_conn, &read_params);
             if (err) {
                 LOG_ERR("Could not read response: %i", err);
                 bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             }
+        } else {
+            check_response(conn);
+            return BT_GATT_ITER_STOP;
         }
     }
     return BT_GATT_ITER_CONTINUE;
@@ -486,18 +506,13 @@ static u8_t read_completed_func(struct bt_conn *conn, u8_t err,
             if (params->single.offset + length <= sizeof(response)) {
                 memcpy(response + params->single.offset, data, length);
                 if (params->single.offset + length == sizeof(response)) {
-                    if (spaceauth_validate(bt_conn_get_dst(conn), challenge, response) == 0) {
-                        LOG_INF("KEY AUTHENTICATED. OPEN DOOR PLEASE.");
-                        led0_set(1);
-                        led1_set(1, 1, 1);
-                    }
-                    memset(challenge, 0, sizeof(challenge));
-                    memset(response, 0, sizeof(response));
-                    bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+                    check_response(conn);
+                    (void) memset(params, 0, sizeof(*params));
                     return BT_GATT_ITER_STOP;
                 }
             } else {
                 bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+                (void) memset(params, 0, sizeof(*params));
                 return BT_GATT_ITER_STOP;
             }
         }
