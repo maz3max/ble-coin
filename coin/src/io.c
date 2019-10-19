@@ -11,9 +11,9 @@ LOG_MODULE_REGISTER(io);
 
 static struct gpio_callback btn_cb = {0};
 
-static struct device *dev;
+static struct device *dev = NULL;
 
-struct k_timer blink_timer;
+struct k_timer blink_timer = {0};
 
 static const int aggressive_blink_ms = 125;
 static const int quick_blink_ms = 250;
