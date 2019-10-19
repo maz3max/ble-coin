@@ -287,7 +287,6 @@ static void connected_cb(struct bt_conn *conn, u8_t err) {
 
 /**
  * gets called when the security level changes
- * only used for debugging
  * @param conn current connection
  * @param level new security level
  */
