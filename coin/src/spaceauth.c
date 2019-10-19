@@ -72,6 +72,9 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
                        BT_GATT_CCC(ccc_cfg_changed)
 );
 
+static const size_t INDICATION_PROTOCOL_OVERHEAD = 3;
+static const size_t AUTH_RESPONSE_CHR_VALUE_HANDLE = 4;
+
 static ssize_t write_challenge(struct bt_conn *conn,
                                const struct bt_gatt_attr *attr,
                                const void *buf, u16_t len,
@@ -88,9 +91,9 @@ static ssize_t write_challenge(struct bt_conn *conn,
     if (offset + len == BLAKE2S_BLOCKBYTES) {
         blake2s(response, BLAKE2S_OUTBYTES, challenge, BLAKE2S_BLOCKBYTES, auth_key, BLAKE2S_KEYBYTES);
         if (ccc_value == BT_GATT_CCC_INDICATE) {
-            ind_params.attr = &auth_svc.attrs[4];
+            ind_params.attr = &auth_svc.attrs[AUTH_RESPONSE_CHR_VALUE_HANDLE];
             u16_t mtu = bt_gatt_get_mtu(conn);
-            ind_params.len = MIN(mtu - 3, BLAKE2S_OUTBYTES);
+            ind_params.len = MIN(mtu - INDICATION_PROTOCOL_OVERHEAD, BLAKE2S_OUTBYTES);
             LOG_INF("connection has MTU: %u", mtu);
             bt_gatt_indicate(NULL, &ind_params);
         }
