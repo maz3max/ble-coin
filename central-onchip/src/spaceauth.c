@@ -80,6 +80,7 @@ spacekey_t *spacekey_lookup(const bt_addr_le_t *addr) {
 
 static int space_settings_set(const char *key, size_t len_rd,
                               settings_read_cb read_cb, void *cb_arg) {
+    ARG_UNUSED(len_rd);
     const char *next;
 
     settings_name_next(key, &next);

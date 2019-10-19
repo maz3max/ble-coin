@@ -29,11 +29,14 @@ static uint8_t response[BLAKE2S_OUTBYTES] = {0};
 static u16_t ccc_value;
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value) {
+    ARG_UNUSED(attr);
     ccc_value = value;
 }
 
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                         u8_t err) {
+    ARG_UNUSED(attr);
+    ARG_UNUSED(conn);
     if (err != 0U) {
         LOG_ERR("indication fail: %i", err);
     } else {
@@ -73,6 +76,8 @@ static ssize_t write_challenge(struct bt_conn *conn,
                                const struct bt_gatt_attr *attr,
                                const void *buf, u16_t len,
                                u16_t offset, u8_t flags) {
+    ARG_UNUSED(attr);
+    ARG_UNUSED(flags);
     if (offset + len > BLAKE2S_BLOCKBYTES) {
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }

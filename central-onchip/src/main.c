@@ -88,6 +88,7 @@ static struct k_delayed_work timeout_timer;
 
 // timeout function to kill connections that take too long
 static void timeout(struct k_work *work) {
+    ARG_UNUSED(work);
     LOG_ERR("TIMEOUT REACHED");
     if (default_conn) {
         bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
@@ -105,6 +106,7 @@ struct wdt_timeout_cfg wdt_config = {
 static struct k_timer watchdog_timer;
 
 static void watchdog_timer_expiry_function(struct k_timer *timer_id) {
+    ARG_UNUSED(timer_id);
     wdt_feed(wdt, wdt_channel_id);
 }
 
@@ -132,6 +134,9 @@ bool ad_parse_func(struct bt_data *data, void *user_data) {
  * @return 0 on success, else error code of bt_enable
  */
 static int cmd_ble_start(const struct shell *shell, size_t argc, char **argv) {
+    ARG_UNUSED(shell);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
     helper_ble_running();
     int err = bt_enable(bt_ready_cb);
     if (err) {
@@ -414,6 +419,8 @@ static u8_t discover_func(struct bt_conn *conn,
  */
 static void write_completed_func(struct bt_conn *conn, u8_t err,
                                  struct bt_gatt_write_params *params) {
+    ARG_UNUSED(conn);
+    ARG_UNUSED(params);
     LOG_DBG("Write complete: err %u", err);
     (void) memset(&write_params, 0, sizeof(write_params));
 }
@@ -430,6 +437,7 @@ static void write_completed_func(struct bt_conn *conn, u8_t err,
 static u8_t notify_func(struct bt_conn *conn,
                         struct bt_gatt_subscribe_params *params,
                         const void *data, u16_t length) {
+    ARG_UNUSED(conn);
     if (!data) {
         LOG_DBG("[UNSUBSCRIBED]");
         params->value_handle = 0U;

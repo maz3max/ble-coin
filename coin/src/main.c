@@ -99,6 +99,7 @@ static void connected(struct bt_conn *conn, u8_t err) {
  * @param reason
  */
 static void disconnected(struct bt_conn *conn, u8_t reason) {
+    ARG_UNUSED(conn);
     LOG_INF("disconnected (reason %u)", reason);
 
     if (default_conn) {
@@ -122,6 +123,7 @@ static struct k_delayed_work shutdown_timer;
  * @param work
  */
 static void shutdown(struct k_work *work) {
+    ARG_UNUSED(work);
     if (default_conn) {
         bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     } else {

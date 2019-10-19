@@ -68,6 +68,8 @@ int parse_hex(const char *str, size_t n, uint8_t *out) {
  * command to load settings from storage
  */
 static int cmd_settings_load(const struct shell *shell, size_t argc, char **argv) {
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
     if (ble_stack_running) {
         shell_error(shell, "BLE stack already running!");
         return -1;
@@ -81,6 +83,8 @@ static int cmd_settings_load(const struct shell *shell, size_t argc, char **argv
  * command to clear storage
  */
 static int cmd_settings_clear(const struct shell *shell, size_t argc, char **argv) {
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
     if (ble_stack_running) {
         shell_error(shell, "BLE stack already running!");
         return -1;
@@ -100,6 +104,9 @@ static int cmd_settings_clear(const struct shell *shell, size_t argc, char **arg
  * command to performs hard-reset of chip
  */
 static int cmd_reboot(const struct shell *shell, size_t argc, char **argv) {
+    ARG_UNUSED(shell);
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
     sys_reboot(SYS_REBOOT_COLD);
     return 0; // just to make compiler happy
 }
@@ -222,6 +229,8 @@ SHELL_CMD_REGISTER(coin, &sub_coin, "commands to manage coins", NULL);
  * command to print all registered spacekeys
  */
 static int cmd_print_spacekeys(const struct shell *shell, size_t argc, char **argv) {
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
     spacekeys_print(shell);
     shell_info(shell, "done");
     return 0;
@@ -239,6 +248,8 @@ static void print_bond_func(struct bt_keys *keys, void *data) {
  * command to print all registered BLE bonds
  */
 static int cmd_print_bonds(const struct shell *shell, size_t argc, char **argv) {
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
     bt_keys_foreach(BT_KEYS_ALL, print_bond_func, (void *) shell);
     shell_info(shell, "done");
     return 0;
@@ -258,6 +269,10 @@ static int cmd_central_setup(const struct shell *shell, size_t argc, char **argv
     if (ble_stack_running) {
         shell_error(shell, "BLE stack already running!");
         return -1;
+    }
+    if (argc != 3) {
+        shell_error(shell, "incorrect number of arguments");
+        return EINVAL;
     }
     bt_addr_le_t addr;
     int ret = parse_addr(argv[1], &addr);

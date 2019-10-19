@@ -51,9 +51,13 @@ static int blink_counter = 0;
 
 static void blink_expiry_function(struct k_timer *timer_id) {
     gpio_pin_write(dev, LED, (blink_counter++) % 2);
+    ARG_UNUSED(timer_id);
 }
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb, u32_t pins) {
+static void button_pressed(struct device *btn_dev, struct gpio_callback *cb, u32_t pins) {
+    ARG_UNUSED(btn_dev);
+    ARG_UNUSED(cb);
+    ARG_UNUSED(pins);
     //LOG_INF("button pressed");
 }
 
