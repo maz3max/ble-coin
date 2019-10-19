@@ -20,4 +20,10 @@ int parse_addr(const char *addr, bt_addr_le_t *result);
  */
 int parse_hex(const char *str, size_t n, uint8_t *out);
 
+/**
+ * Notify helper functions that BLE stack is running.
+ * (disables write-commands to settings)
+ */
+void helper_ble_running();
+
 #endif //HELPER_H
