@@ -35,6 +35,7 @@ struct bt_conn *default_conn = NULL;
 
 static uint8_t batt_adv_bytes[] = {0x0f, 0x18, /* batt level UUID */
                                    0x00}; /* actual batt level */
+const static size_t BATT_ADV_BYTES_BLVL_IDX = 2;
 // advertising data
 static const struct bt_data ad[] = {
         BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -128,7 +129,7 @@ void main(void) {
     k_delayed_work_submit(&shutdown_timer, K_SECONDS(10));
     // initialize own parts
     io_init();
-    batt_adv_bytes[2] = bas_init();
+    batt_adv_bytes[BATT_ADV_BYTES_BLVL_IDX] = bas_init();
     space_auth_init();
 
     LOG_INF("turning BLE on");
