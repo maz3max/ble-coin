@@ -82,5 +82,8 @@
 			label = "storage";
 			reg = <0x0003e000 0x00002000>;
 		};
+		/*
+		 * REMEMBER TO UPDATE ADDRESS AND LENGTH IN prod/gen_bond.py
+		 */
 	};
 };

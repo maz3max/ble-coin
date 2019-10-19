@@ -82,7 +82,7 @@ def periph_storage_partition(periph_addr, periph_irk, central_addr, central_irk,
            gen_storage_item(bt_irk) + \
            gen_storage_item(bt_keys) + \
            gen_storage_item(space_key)
-    return data + b'\xff' * (0x6000 - len(data))
+    return data + b'\xff' * (0x6000 - len(data)) # partition length from DTS
 
 
 def central_storage_partition(central_addr, central_irk):
@@ -92,7 +92,7 @@ def central_storage_partition(central_addr, central_irk):
     data = magic_header + \
            gen_storage_item(bt_id) + \
            gen_storage_item(bt_irk)
-    return data + b'\xff' * (0x4000 - len(data))
+    return data + b'\xff' * (0x4000 - len(data)) # partition length from DTS
 
 
 def prepare_central_hex(central_addr, central_irk, path="central.hex"):
@@ -103,7 +103,7 @@ def prepare_central_hex(central_addr, central_irk, path="central.hex"):
         return
     storage_bytes = central_storage_partition(central_addr, central_irk)
     storage = IntelHex()
-    storage[0xcc000:0xd0000] = list(storage_bytes)
+    storage[0xcc000:0xd0000] = list(storage_bytes) # partition address from DTS
     central = IntelHex(path)
     central.merge(storage, overlap="replace")
     central.tofile(file_name, format="hex")
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     # create merged hex file for easy programming
     storage = IntelHex()
-    storage[0x32000:0x38000] = list(storage_bytes)
+    storage[0x32000:0x38000] = list(storage_bytes) # partition address from DTS
     # storage.tofile("storage_%s.hex" % addr_string, format="hex")
     coin = IntelHex("coin.hex")
     coin.merge(storage, overlap="replace")
