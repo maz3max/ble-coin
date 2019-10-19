@@ -1,5 +1,4 @@
-#ifndef HELPER_H
-#define HELPER_H
+#pragma once
 
 #include <bluetooth/bluetooth.h>
 
@@ -25,5 +24,3 @@ int parse_hex(const char *str, size_t n, uint8_t *out);
  * (disables write-commands to settings)
  */
 void helper_ble_running();
-
-#endif //HELPER_H

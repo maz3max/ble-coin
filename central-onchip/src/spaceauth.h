@@ -1,5 +1,4 @@
-#ifndef SPACEAUTH_H
-#define SPACEAUTH_H
+#pragma once
 
 #include <bluetooth/bluetooth.h>
 #include <shell/shell.h>
@@ -51,5 +50,3 @@ int spaceauth_validate(const bt_addr_le_t *addr, const uint8_t *challenge, const
  * Initialize spaceauth settings handler.
  */
 void spaceauth_init();
-
-#endif //SPACEAUTH_H
