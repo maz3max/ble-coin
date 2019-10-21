@@ -29,10 +29,17 @@ After that, the central knows it can download the response. The response is then
 The peripherals shut down when a connection to them is cancelled. They start up again when the button is pressed.
 Both peripherals and the central kill the connection after a short timeout (5s).
 
-## How to use?
-1. Install CMake, Python 3 and the Zephyr SDK (0.10.3) at the standard location (`/opt/zephyr-sdk/`)
-2. Go into the `prod/` folder and run the `./bootstrap.sh` script.
+## Building locally (on Linux)
+1. Follow the [installation instructions](https://github.com/zephyrproject-rtos/zephyr/blob/master/doc/getting_started/installation_linux.rst) and install the Zephyr SDK (0.10.3) at the standard location (`/opt/zephyr-sdk/`).
+2. Go to the `prod/` folder and run the `./bootstrap.sh` script.
 3. Run `make` to build the projects.
+
+## Building via Docker
+1. Make sure you also cloned the submodules of this repository.
+2. Make sure `docker` is installed and your account is in the `docker` group.
+3. Inside the repository folder, execute `docker run -i -t -u $UID -v $(pwd):/data/build maz3max/coinbuild` to build using the [build image](https://github.com/maz3max/ble-coin-docker).
+
+## How to use?
 4. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate a hex-file for the specific coin containing the keys (e.g. `coin_d33efc87ed2e.hex`). Every coin gets a line in `coins.txt`.
 5. Flash `central.hex` onto the coin.
 6. Flash `central-onchip/` onto the dongle. Connect to its USB Serial with Baudrate 115200 (on Linux, it is something like this`/dev/serial/by-id/usb-ZEPHYR_N39_BLE_KEYKEEPER_0.01-if00`)
