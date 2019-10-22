@@ -1,0 +1,14 @@
+language: minimal
+
+services:
+  - docker
+
+before_install:
+- docker pull maz3max/coinbuild
+
+before_script:
+  # Fetch the base branch when it is not `master`
+- git fetch origin "${TRAVIS_BRANCH}:${TRAVIS_BRANCH}"
+
+script:
+- docker run -i -t -u $UID -v $(pwd):/data/build maz3max/coinbuild
