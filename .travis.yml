@@ -17,4 +17,17 @@ before_script:
 
 script:
 - docker run -i -t -u $UID -v $(pwd):/data/build maz3max/coinbuild
-- zip prod.zip prod/coin.hex prod/central.hex prod/gen_bond.py prod/requirements.txt
+- export COMMIT=$(git log --format=%h -1)
+- export DEPLOY_FILE=prod-g${COMMIT}.zip
+- zip ${DEPLOY_FILE} prod/coin.hex prod/central.hex prod/gen_bond.py prod/requirements.txt
+
+deploy:
+  - provider: releases
+    api_key:
+      secure: $GITHUB_API_KEY
+    file:
+    - ${DEPLOY_FILE}
+    skip-cleanup: true
+    prerelease: true
+    on:
+      repo: maz3max/ble-coin
