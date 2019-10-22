@@ -8,12 +8,12 @@ clean:
 
 .PHONY: coin
 coin:		../.west/config
-	BOARD=nrf52_coin BOARD_ROOT=../coin  west build -d build/coin ../coin/
+	BOARD=nrf52_coin BOARD_ROOT=../coin	west build -d build/coin ../coin/
 	cp build/coin/zephyr/zephyr.hex coin.hex
 
 .PHONY: central
 central:	../.west/config
-	west build -b nrf52840_pca10059 -d build/central ../central-onchip/
+	BOARD=nrf52840_pca10059			west build -d build/central ../central-onchip/
 	cp build/central/zephyr/zephyr.hex central.hex
 
 ../.west/config:
