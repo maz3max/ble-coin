@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8.2)
 
-set( ENV{ZEPHYR_BASE} ${CMAKE_SOURCE_DIR}/../zephyr )
+get_filename_component( ENV{ZEPHYR_BASE} "${CMAKE_SOURCE_DIR}/../zephyr" ABSOLUTE)
 set( ENV{BOARD} nrf52840_pca10059 )
 set( ENV{ZEPHYR_TOOLCHAIN_VARIANT} zephyr )
 set( ENV{ZEPHYR_SDK_INSTALL_DIR} /opt/zephyr-sdk/ )
