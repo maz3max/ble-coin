@@ -59,7 +59,10 @@ static void bt_ready(int err) {
         return;
     }
 
-    settings_load();
+    if (settings_load() != 0) {
+        set_blink_intensity(BI_SOS);
+        return;
+    }
 
     bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
     // bt_foreach_bond(BT_ID_DEFAULT,connect_bonded, NULL);
@@ -73,6 +76,7 @@ static void bt_ready(int err) {
 static void connected(struct bt_conn *conn, u8_t err) {
     if (err) {
         LOG_ERR("connection failed (err %u)", err);
+        disconnected(NULL, 0);
     } else {
         if (default_conn) {
             bt_conn_unref(default_conn);
@@ -142,9 +146,8 @@ void main(void) {
 
     LOG_INF("turning BLE on");
     // enable the bluetooth stack
-    int err;
-    err = bt_enable(bt_ready);
-    if (err) {
+    if (bt_enable(bt_ready) != 0) {
+        set_blink_intensity(BI_SOS);
         return;
     }
     // set connection and authentication callbacks

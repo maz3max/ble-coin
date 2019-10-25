@@ -29,6 +29,9 @@ static const uint16_t sos_sequence[] = {250, 125, 250, 125, 250, 125,
 static int sos_index = -1;
 
 void set_blink_intensity(blink_state_t intensity) {
+    if (sos_index > -1) {
+        return;
+    }
     switch (intensity) {
         case BI_ON:
             LOG_INF("turn LED on");
