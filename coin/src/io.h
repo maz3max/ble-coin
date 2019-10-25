@@ -9,7 +9,8 @@ typedef enum blink_state_t {
     BI_AGGRESSIVE,
     BI_QUICK,
     BI_SLOW,
-    BI_OFF
+    BI_OFF,
+    BI_SOS
 } blink_state_t;
 
 /**

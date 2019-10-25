@@ -1,5 +1,6 @@
 #include "io.h"
 #include <gpio.h>
+#include <power.h>
 
 #include <logging/log.h>
 
@@ -18,6 +19,14 @@ struct k_timer blink_timer = {{{{0}}}};
 static const int aggressive_blink_ms = 125;
 static const int quick_blink_ms = 250;
 static const int slow_blink_ms = 500;
+
+static const uint16_t sos_sequence[] = {250, 125, 250, 125, 250, 125,
+                                        500, 125, 500, 125, 500, 125,
+                                        250, 125, 250, 125, 250, 1000,
+                                        250, 125, 250, 125, 250, 125,
+                                        500, 125, 500, 125, 500, 125,
+                                        250, 125, 250, 125, 250, 125};
+static int sos_index = -1;
 
 void set_blink_intensity(blink_state_t intensity) {
     switch (intensity) {
@@ -38,6 +47,12 @@ void set_blink_intensity(blink_state_t intensity) {
             LOG_INF("slow LED blink");
             k_timer_start(&blink_timer, K_MSEC(slow_blink_ms), K_MSEC(slow_blink_ms));
             break;
+        case BI_SOS:
+            LOG_INF("distress signal");
+            gpio_pin_write(dev, LED, 1);
+            sos_index = 0;
+            k_timer_start(&blink_timer, K_MSEC(sos_sequence[0]), 0);
+            break;
         default:
         case BI_OFF:
             LOG_INF("turn LED off");
@@ -50,8 +65,19 @@ void set_blink_intensity(blink_state_t intensity) {
 static int blink_counter = 0;
 
 static void blink_expiry_function(struct k_timer *timer_id) {
-    gpio_pin_write(dev, LED, (blink_counter++) % 2);
     ARG_UNUSED(timer_id);
+    if (sos_index > -1) { //SOS mode
+        sos_index += 1;
+        if (sos_index < ARRAY_SIZE(sos_sequence)) {
+            gpio_pin_write(dev, LED, 1 - (sos_index % 2));
+            k_timer_start(&blink_timer, K_MSEC(sos_sequence[sos_index]), 0);
+        } else {
+            gpio_pin_write(dev, LED, 0);
+            sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
+        }
+    } else {
+        gpio_pin_write(dev, LED, (blink_counter++) % 2);
+    }
 }
 
 static void button_pressed(struct device *btn_dev, struct gpio_callback *cb, u32_t pins) {
