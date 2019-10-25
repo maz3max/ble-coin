@@ -49,6 +49,17 @@ static void connected(struct bt_conn *conn, u8_t err);
 
 static void disconnected(struct bt_conn *conn, u8_t reason);
 
+static void connect_bonded(const struct bt_bond_info *info, void *user_data) {
+    if (default_conn) {
+        bt_conn_unref(default_conn);
+    }
+    default_conn = bt_conn_create_slave_le(&info->addr, BT_LE_ADV_CONN);
+    if (!default_conn) {
+        LOG_ERR("error advertising");
+        disconnected(NULL, 0);
+    }
+}
+
 /**
  * gets called when the BLE stack is initialized
  * @param err error while initializing
@@ -64,8 +75,7 @@ static void bt_ready(int err) {
         return;
     }
 
-    bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
-    // bt_foreach_bond(BT_ID_DEFAULT,connect_bonded, NULL);
+    bt_foreach_bond(BT_ID_DEFAULT, connect_bonded, NULL);
 }
 
 /**
