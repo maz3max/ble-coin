@@ -1,0 +1,22 @@
+# Kconfig - nRF52 Coin board configuration
+#
+# Copyright (c) 2019 Maximilian Deubel
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52_COIN
+
+config BOARD
+	default "nrf52_coin"
+
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_NRF52_COIN

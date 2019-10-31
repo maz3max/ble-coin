@@ -1,0 +1,12 @@
+identifier: nrf52_coin
+name: nRF52 Coin
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - adc

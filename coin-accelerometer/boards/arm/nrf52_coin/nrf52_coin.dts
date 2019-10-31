@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) Maximilian Deubel
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+
+/ {
+	model = "nRF52 Coin";
+	compatible = "maxd,nrf52_coin", "nordic,nrf52832-qfaa",
+		     "nordic,nrf52832";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 26 0>;
+			label = "LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 25 (GPIO_PUD_PULL_UP |
+					    GPIO_INT_ACTIVE_LOW)>;
+			label = "Button";
+		};
+	};
+};
+
+&adc {
+	status ="okay";
+};
+
+&gpiote {
+	status ="okay";
+};
+
+&gpio0 {
+	status ="okay";
+};
+
+arduino_i2c: &i2c0 {
+	status = "okay";
+	sda-pin = <31>;
+	scl-pin = <30>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x32000>;
+		};
+
+		storage_partition: partition@32000 {
+			label = "storage";
+			reg = <0x32000 0x00006000>;
+		};
+		/*
+		 * REMEMBER TO UPDATE ADDRESS AND LENGTH IN prod/gen_bond.py
+		 */
+	};
+};
