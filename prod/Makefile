@@ -1,5 +1,5 @@
 .PHONY: all
-all: coin central
+all: coin coin-accelerometer coin-nrf51 central
 
 .PHONY: clean
 clean:
