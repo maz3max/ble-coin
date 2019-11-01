@@ -52,6 +52,7 @@
 #define KX022_REG_BUF_READ 0x3F	//R
 #define KX022_REG_SELF_TEST 0x60	//R/W
 
+// bits of KX022_REG_ODCNTL
 #define KX022_BIT_OSA0 (1 << 0)
 #define KX022_BIT_OSA1 (1 << 1)
 #define KX022_BIT_OSA2 (1 << 2)
@@ -59,6 +60,7 @@
 #define KX022_BIT_LPRO (1 << 6)
 #define KX022_BIT_IIR_BYPASS (1 << 7)
 
+// bits of KX022_REG_CNTL1
 #define KX022_BIT_TPE (1 << 0)
 #define KX022_BIT_WUFE (1 << 1)
 #define KX022_BIT_TDTE (1 << 2)
@@ -67,5 +69,37 @@
 #define KX022_BIT_DRDYE (1 << 5)
 #define KX022_BIT_RES (1 << 6)
 #define KX022_BIT_PC1 (1 << 7)
+
+// bits of KX022_REG_INC1
+#define KX022_BIT_SPI3E (1 << 0)
+#define KX022_BIT_STPOL (1 << 1)
+#define KX022_BIT_IEL1 (1 << 3)
+#define KX022_BIT_IEA1 (1 << 4)
+#define KX022_BIT_IEN1 (1 << 5)
+
+//bits of KX022_REG_INC2
+#define KX022_BIT_ZPWUE (1 << 0)
+#define KX022_BIT_ZNWUE (1 << 1)
+#define KX022_BIT_YPWUE (1 << 2)
+#define KX022_BIT_YNWUE (1 << 3)
+#define KX022_BIT_XPWUE (1 << 4)
+#define KX022_BIT_XNWUE (1 << 5)
+
+//bits of KX022_REG_INC3
+#define KX022_BIT_TFUM (1 << 0)
+#define KX022_BIT_TFDM (1 << 1)
+#define KX022_BIT_TUPM (1 << 2)
+#define KX022_BIT_TDOM (1 << 3)
+#define KX022_BIT_TRIM (1 << 4)
+#define KX022_BIT_TLEM (1 << 5)
+
+//bits of KX022_REG_INC4
+#define KX022_BIT_TPI1 (1 << 0)
+#define KX022_BIT_WUFI1 (1 << 1)
+#define KX022_BIT_TDTI1 (1 << 2)
+#define KX022_BIT_DRDYI1 (1 << 4)
+#define KX022_BIT_WMI1 (1 << 5)
+#define KX022_BIT_BFI1 (1 << 6)
+
 
 #define KX022_WHO_AM_I_VAL 0x14
