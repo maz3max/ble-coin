@@ -10,5 +10,6 @@
 void kx022_init(struct device *dev, u16_t addr);
 // returns true if who-am-i register has expected value
 bool kx022_verify_id(struct device *dev, u16_t addr);
+
 // output has to be 6 bytes long
-void kx022_read_acc(struct device *dev, u16_t addr, u8_t* output);
+void kx022_read_acc(struct device *dev, u16_t addr, u8_t *output);
