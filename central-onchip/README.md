@@ -32,11 +32,11 @@ Output of a successful authentication could look like this:
 
 ## Code Structure
 The code is structured in 3 parts:
-* `helper`: contains parsing helper functions and most commands
+* `helper`: contains parsing helper functions and most shell commands
 * `spaceauth`: contains spacekey settings handler, spacekey management functions and the response validation code
 * `main`: contains connection management, GATT service discovery, the app statemachine and the `ble_start` command
 * `leds`: contains helper functions for controlling the onboard LEDs
 
-## App Statemachine
+## Central Statemachine
 ![](https://i.imgur.com/IQAX2zw.png)
 
