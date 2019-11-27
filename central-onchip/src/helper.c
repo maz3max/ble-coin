@@ -5,6 +5,7 @@
 #include <power/reboot.h>
 #include <settings/settings.h>
 #include <storage/flash_map.h>
+#include <bluetooth/hci.h>
 #include <keys.h> //use of internal keys API for bt_keys etc.
 #include <settings.h> //use of internal bt settings API
 // stdlib includes

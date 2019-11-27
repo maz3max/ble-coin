@@ -2,6 +2,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/hci.h>
 #include <logging/log.h>
 #include <settings/settings.h>
 #include <shell/shell.h>

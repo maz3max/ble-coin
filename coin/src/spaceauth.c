@@ -69,7 +69,7 @@ BT_GATT_SERVICE_DEFINE(auth_svc,
                        BT_GATT_CHARACTERISTIC(&auth_response_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE,
                                               BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_READ_ENCRYPT,
                                               read_response, NULL, response),
-                       BT_GATT_CCC(ccc_cfg_changed)
+                       BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
 static const size_t INDICATION_PROTOCOL_OVERHEAD = 3;
