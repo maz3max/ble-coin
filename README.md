@@ -42,8 +42,8 @@ Both peripherals and the central kill the connection after a short timeout (5s).
 
 ## How to use?
 1. Use the `gen_bond.py` script in the `prod/` folder to generate a `central.txt` and a `coins.txt` file. It will also generate a hex-file for the specific coin containing the keys (e.g. `coin_d33efc87ed2e.hex`). Every coin gets a line in `coins.txt`.
-5. Flash `central.hex` onto the coin.
-6. Flash `central-onchip/` onto the dongle. Connect to its USB Serial with Baudrate 115200 (on Linux, it is something like this`/dev/serial/by-id/usb-ZEPHYR_N39_BLE_KEYKEEPER_0.01-if00`)
+5. Flash `coin_[a-f0-9]{12}\.hex` onto the coin.
+6. Flash `central.hex` onto the dongle. Connect to its USB Serial with Baudrate 115200 (on Linux, it is something like this`/dev/serial/by-id/usb-ZEPHYR_N39_BLE_KEYKEEPER_0.01-if00`)
 7. Press enter to make sure you are in the shell
 8. use the `central_setup` command with the contents of your `central.txt` to initialize the address and the IRK of the central.
 9. use the `coin add` command with the last line of your `coins.txt` to add the newly compiled coin.
