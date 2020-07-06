@@ -110,7 +110,8 @@ static void disconnected(struct bt_conn *conn, u8_t reason) {
         bt_conn_unref(default_conn);
         default_conn = NULL;
     }
-    bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+    LOG_INF("going to sleep");
+    sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
 }
 
 // collection of connection callbacks
