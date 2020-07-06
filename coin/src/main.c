@@ -110,8 +110,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason) {
         bt_conn_unref(default_conn);
         default_conn = NULL;
     }
-    LOG_INF("going to sleep");
-    sys_pm_force_power_state(SYS_POWER_STATE_DEEP_SLEEP_1);
+    bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
 }
 
 // collection of connection callbacks
@@ -137,8 +136,8 @@ static void shutdown(struct k_work *work) {
 
 void main(void) {
     // set shutdown timer
-    k_delayed_work_init(&shutdown_timer, shutdown);
-    k_delayed_work_submit(&shutdown_timer, K_SECONDS(10));
+    //k_delayed_work_init(&shutdown_timer, shutdown);
+    //k_delayed_work_submit(&shutdown_timer, K_SECONDS(10));
     // initialize own parts
     io_init();
     batt_adv_bytes[BATT_ADV_BYTES_BLVL_IDX] = bas_init();
