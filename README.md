@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/maz3max/ble-coin.svg?branch=master)](https://travis-ci.org/maz3max/ble-coin)
-# BLE Keyfob Authentication (PROJECT STATUS: PROOF OF CONCEPT)
+# BLE Keyfob Authentication (PROJECT STATUS: DEPLOYED)
 The purpose of this project is to provide members of the [NETZ39 Hackerspace](http://www.netz39.de/) a new, (sufficiently) secure and easy-to-use way to unlock the door of the Hackerspace.
 
 ## Principle Structure
