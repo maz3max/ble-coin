@@ -100,11 +100,15 @@ struct wdt_timeout_cfg wdt_config = {
         .window.max = 5000U
 };
 
+static bool i_want_to_die = false;
+
 static struct k_timer watchdog_timer;
 
 static void watchdog_timer_expiry_function(struct k_timer *timer_id) {
     ARG_UNUSED(timer_id);
-    wdt_feed(wdt, wdt_channel_id);
+    if (!i_want_to_die) {
+        wdt_feed(wdt, wdt_channel_id);
+    }
 }
 
 // helper function for advertisement data parser
@@ -528,6 +532,8 @@ static u8_t read_completed_func(struct bt_conn *conn, u8_t err,
 static void disconnected_cb(struct bt_conn *conn, u8_t reason) {
     led0_set(0);
     led1_set(0, 0, 0);
+
+    i_want_to_die = true;
 
     const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
