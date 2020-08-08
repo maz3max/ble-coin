@@ -58,7 +58,7 @@ Both peripherals and the central kill the connection after a short timeout (5s).
 * Denial of Service cannot easily be cancelled out when using BLE.
 * Like legacy-keys made out of metal, one of the BLE keys could be stolen and misused. (Authentication by ownership)
 * Parts are not super-cheap: The central costs 10€ and one keyfob cost 5.50€
-* These chinese boards seem to come with **fake** chips, whose **access port protection is broken**
+* NRF52 Access Port Protection is broken: https://limitedresults.com/2020/06/nrf52-debug-resurrection-approtect-bypass/ 
 
 ## FAQ
 * Why BLE?
@@ -71,7 +71,7 @@ Both peripherals and the central kill the connection after a short timeout (5s).
     * build system less annoying than Apache Mynewt
 * Why not use the cheaper NRF51822?
     * AFAIK this chip does not have enough flash to support the Zephyr BLE stack with enabled security
-    * The flash read back protection is broken: [step-by-step guide](https://www.pentestpartners.com/security-blog/nrf51822-code-readout-protection-bypass-a-how-to/)
+    * The flash read back protection is also broken: [step-by-step guide](https://www.pentestpartners.com/security-blog/nrf51822-code-readout-protection-bypass-a-how-to/)
 * How do I get the software onto the devices?
     * For the NRF52840 dongle, you can use [nRF Connect for Desktop](https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Connect-for-desktop)
     * For the coins, you have to use a Serial-Wire-Debug Programmer, but a [cheap 2€ STLinkV2 clone](https://de.aliexpress.com/item/32792513237.html) will do just fine using [OpenOCD](http://openocd.org/), See [coin readme](./coin/README.md)
