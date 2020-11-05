@@ -4,6 +4,7 @@ import re
 import fcntl
 import os
 import binascii
+import sys
 from intelhex import IntelHex
 
 
@@ -53,15 +54,16 @@ def periph_storage_partition(periph_addr, periph_irk, central_addr, central_irk,
               bytes(ltk) + bytes(central_irk) + b'\x00' * 6
     space_key = b'space/key=' + bytes(spacekey)
     data = magic_header + \
-           gen_storage_item(bt_id) + \
-           gen_storage_item(bt_irk) + \
-           gen_storage_item(bt_keys) + \
-           gen_storage_item(space_key)
+        gen_storage_item(bt_id) + \
+        gen_storage_item(bt_irk) + \
+        gen_storage_item(bt_keys) + \
+        gen_storage_item(space_key)
     return data + b'\xff' * (0x6000 - len(data))  # partition length from DTS
 
 
 # regex to parse address and IRK
 id_regex = r"^((?:[0-9a-fA-F]{2}\:){5}[0-9a-fA-F]{2})\s*(random|public){0,1}\s*([0-9a-fA-F]{32})"
+coin_regex = id_regex+r"\s*([0-9a-fA-F]{32})\s*([0-9a-fA-F]{64})"
 
 
 # parses a line of either the central.txt or coins.txt and extracts BLE address, address type and IRK
@@ -92,6 +94,32 @@ def read_ids(path="coins.txt"):
     return result
 
 
+def parse_coin_line(line):
+    m = re.search(coin_regex, line)
+    if m:
+        a = m.group(1)
+        hex_arr = a.split(":")
+        addr = bytes([int(b, 16) for b in hex_arr[::-1]])
+        addr_type = m.group(2)
+        if not addr_type:
+            addr_type = "random"
+        return addr, addr_type, binascii.unhexlify(m.group(3)), binascii.unhexlify(m.group(4)), binascii.unhexlify(m.group(5))
+    else:
+        raise ValueError("Could not parse line")
+
+
+def read_coin_data(c_addr, path="coins.txt"):
+    if not os.path.exists(path):
+        return None
+    with open(path, "r") as f:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        for line in f:
+            addr, _, irk, ltk, spacekey = parse_coin_line(line)
+            if addr == c_addr:
+                return irk, ltk, spacekey
+    return None
+
+
 # appends a coin line to coins.txt (using flock for exclusive access)
 def append_id(line, path="coins.txt"):
     with open(path, "a") as f:
@@ -111,7 +139,8 @@ def gen_central(path="central.txt"):
         central_addr = bytes(central_addr)
         central_irk = secrets.token_bytes(16)
         with open(path, "w") as f:
-            f.write("%s %s" % (addr_to_str(central_addr), central_irk.hex().upper()))
+            f.write("%s %s" %
+                    (addr_to_str(central_addr), central_irk.hex().upper()))
         return central_addr, "random", central_irk
 
 
@@ -129,30 +158,38 @@ def gen_peripheral(addr_list):
 
 
 if __name__ == '__main__':
-    # prepare IDs
-    p_addr, p_irk = gen_peripheral(read_ids())
     c_addr, c_addr_type, c_irk = gen_central()
 
-    print("Central: " + addr_to_str(c_addr))
-    print("Peripheral: " + addr_to_str(p_addr))
-
-    # prepare keys
-    ltk = secrets.token_bytes(16)
-    spacekey = secrets.token_bytes(32)
-
-    # write coin line
-    append_id(coin_line(p_addr, p_irk, ltk, spacekey))
+    # prepare IDs
+    if len(sys.argv) == 2:
+        hex_arr = sys.argv[1].split(":")
+        p_addr = bytes([int(b, 16) for b in hex_arr[::-1]])
+        p_irk, ltk, spacekey = read_coin_data(p_addr)
+        print("central: " + addr_to_str(c_addr))
+        print("existing peripheral: " + addr_to_str(p_addr))
+    else:
+        p_addr, p_irk = gen_peripheral(read_ids())
+        # prepare keys
+        ltk = secrets.token_bytes(16)
+        spacekey = secrets.token_bytes(32)
+        # write coin line
+        append_id(coin_line(p_addr, p_irk, ltk, spacekey))
+        print("central: " + addr_to_str(c_addr))
+        print("new peripheral: " + addr_to_str(p_addr))
 
     # create storage partition
-    storage_bytes = periph_storage_partition(p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
+    storage_bytes = periph_storage_partition(
+        p_addr, p_irk, c_addr, c_irk, ltk, spacekey)
 
     addr_string = binascii.hexlify(p_addr[::-1]).decode()
 
     # create merged hex file for easy programming
     storage = IntelHex()
-    storage[0x32000:0x38000] = list(storage_bytes)  # partition address from DTS
+    storage[0x32000:0x38000] = list(
+        storage_bytes)  # partition address from DTS
     # storage.tofile("storage_%s.hex" % addr_string, format="hex")
     coin = IntelHex("coin.hex")
     coin.merge(storage, overlap="replace")
-    coin[0x10001208:0x10001208 + 4] = [0x00] * 4  # enable Access Port Protection
+    coin[0x10001208:0x10001208 + 4] = [0x00] * \
+        4  # enable Access Port Protection
     coin.tofile("coin_%s.hex" % addr_string, format="hex")

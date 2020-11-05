@@ -96,7 +96,7 @@ if __name__ == '__main__':
             storage = file.read()
     elif args.file[-4:] == '.hex':
         ih = IH(args.file)
-        storage = ih.tobinstr()
+        storage = ih[0x32000:0x38000].tobinstr()
     else:
         print("unrecognized file extension", file=sys.stderr)
         sys.exit(-1)
