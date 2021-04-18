@@ -14,9 +14,10 @@ class KeykeeperDB:
     def __init__(self):
         self.coins = {}
         self.identity = []
+        self.names = {}
         self.load()
 
-    def load(self, coins="coins.txt", central="central.txt"):
+    def load(self, coins="coins.txt", central="central.txt", names="names.txt"):
         coin_list = []
         identity = None
         with open(coins, "r") as f:
@@ -29,6 +30,14 @@ class KeykeeperDB:
             m = re.match(r"(.{17})\s+(.{32})", line)
             if m:
                 self.identity = m.groups()
+        try:
+            with open(names, "r") as f:
+                for line in f:
+                    m = re.match(r"(.{17})\s+(.+)", line)
+                    if m:
+                        self.names[m.group(1)] = m.group(2)
+        except:
+            pass
 
 
 class StatusType(IntEnum):
@@ -189,8 +198,12 @@ class KeykeeperSerialMgr:
             if k == StatusType.IDENTITY:
                 self.identity = v[0].upper()
             if k == StatusType.AUTHENTICATED:
-                os.write(self.status_pipe, str("status: {} ({}%🔋) authenticated".format(
-                    self.current_coin.address, self.current_coin.battery_level)).encode('utf8'))
+                if self.current_coin.address in self.db.names:
+                    os.write(self.status_pipe, str("status: {}'s coin ({}%🔋) authenticated".format(
+                        self.db.names[self.current_coin.address], self.current_coin.battery_level)).encode('utf8'))
+                else:
+                    os.write(self.status_pipe, str("status: {} ({}%🔋) authenticated".format(
+                        self.current_coin.address, self.current_coin.battery_level)).encode('utf8'))
             elif k == StatusType.BATTERY_LEVEL:
                 self.current_coin.battery_level = v[0]
             elif k == StatusType.CONNECTED:
