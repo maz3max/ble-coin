@@ -1,0 +1,46 @@
+# source [find interface/jlink.cfg]
+
+transport select swd
+
+source [find target/nrf52.cfg]
+
+init
+
+# this is taken from the nrf52 script included in OpenOCD
+# Mass erase and unlock the device using proprietary nRF CTRL-AP (AP #1)
+# http://www.ebyte.com produces modules with nRF52 locked by default,
+# use nrf52_recover to enable flashing and debug.
+set target [target current]
+set dap [$target cget -dap]
+
+set IDR [$dap apreg 1 0xfc]
+if {$IDR != 0x02880000} {
+	echo "Error: Cannot access nRF52 CTRL-AP!"
+	return
+}
+
+poll off
+
+# Assert reset
+$dap apreg 1 0 1
+
+# Reset ERASEALLSTATUS event
+$dap apreg 1 8 0
+
+# Trigger ERASEALL task
+$dap apreg 1 4 0
+$dap apreg 1 4 1
+
+for {set i 0} {1} {incr i} {
+	set ERASEALLSTATUS [$dap apreg 1 8]
+	if {$ERASEALLSTATUS == 1} {
+		echo "$target device has been successfully erased and unlocked."
+		break
+	}
+	if {$i >= 5} {
+		echo "Error: $target recovery failed."
+		break
+	}
+	sleep 100
+}
+shutdown

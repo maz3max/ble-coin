@@ -1,0 +1,26 @@
+# source [find interface/jlink.cfg]
+
+transport select swd
+
+source [find target/nrf52.cfg]
+
+init
+
+set dap [[target current] cget -dap]
+set IDR [$dap apreg 1 0xfc]
+if {$IDR != 0x02880000} {
+	echo "Error: Cannot access nRF52 CTRL-AP!"
+} else {
+	set err [catch {set APPROTECTSTATUS [$dap apreg 1 0xc]}]
+	if {$err == 0 && $APPROTECTSTATUS == 1} {
+		echo "nRF52 device has no active AP Protection."
+		nrf5 info
+		echo ""
+	}
+	if {$err == 0 && $APPROTECTSTATUS != 1} {
+		echo "nRF52 device has active AP Protection."
+		echo ""
+	}
+}
+
+shutdown
